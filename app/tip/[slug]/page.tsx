@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { useAppKitAccount, useAppKitNetwork, useAppKit } from '@reown/appkit/react'
-import { createX402Client } from 'x402-solana/client'
+import { useAppKitAccount, useAppKit } from '@reown/appkit/react'
+import { useWalletClient } from 'wagmi'
 
 type Creator = {
   slug: string
@@ -22,9 +22,9 @@ export default function TipPage() {
   const slug = params.slug as string
 
   // Reown AppKit hooks - unified wallet for all chains
-  const { address, isConnected, caipAddress } = useAppKitAccount()
-  const { caipNetwork, switchNetwork } = useAppKitNetwork()
+  const { address, isConnected } = useAppKitAccount()
   const { open } = useAppKit()
+  const { data: walletClient } = useWalletClient()
 
   const [creator, setCreator] = useState<Creator | null>(null)
   const [loading, setLoading] = useState(true)
@@ -80,43 +80,82 @@ export default function TipPage() {
         throw new Error('Solana tipping with Reown coming soon - pending x402-solana integration')
 
       } else if (selectedChain === 'base') {
-        // Base tipping via x402 protocol
+        // Base tipping via x402 protocol using CDP facilitator
         if (!creator?.evm_wallet_address) {
           throw new Error('Creator does not accept tips on Base')
         }
 
+        if (!walletClient) {
+          throw new Error('Wallet not connected. Please reconnect your wallet.')
+        }
+
         console.log('[x402-Base] Starting x402 tip flow...', { amount, creator: slug })
+        console.log('[x402-Base] Wallet client:', walletClient.account.address)
 
-        // Make a simple HTTP request to the Base payment endpoint
-        // The endpoint will return 402 with payment requirements
-        // For now, we're using a basic fetch approach
-        // Full CDP x402 client integration (wrapFetchWithPayment) will be added when CDP API keys are configured
+        // Import x402 client helpers
+        const { createPaymentHeader } = await import('x402/client')
 
-        const response = await fetch(`/api/x402/tip/${slug}/pay-base?amount=${amount}&token=USDC`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
+        // Step 1: Make initial request to get 402 Payment Required
+        console.log('[x402-Base] Step 1: Requesting payment requirements...')
+        const initialResponse = await fetch(
+          `/api/x402/tip/${slug}/pay-base?amount=${amount}&token=USDC`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        )
 
-        const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Payment failed')
+        if (initialResponse.status !== 402) {
+          // If not 402, something went wrong
+          const errorData = await initialResponse.json().catch(() => ({ error: 'Unexpected response' }))
+          throw new Error(errorData.error || `Expected 402 Payment Required, got ${initialResponse.status}`)
         }
 
-        console.log('[x402-Base] Response:', result)
+        // Step 2: Parse payment requirements from 402 response
+        const paymentData = await initialResponse.json()
+        console.log('[x402-Base] Step 2: Payment requirements received:', paymentData)
 
-        // For now, just show success
-        // Full implementation will include actual payment signing and settlement
-        if (result.tip) {
-          setTxSignature(result.tip.signature || 'pending')
+        if (!paymentData.paymentRequirements || paymentData.paymentRequirements.length === 0) {
+          throw new Error('No payment requirements returned from server')
         }
 
-        // Note: Full implementation requires:
-        // 1. CDP API keys setup
-        // 2. wrapFetchWithPayment from @coinbase/x402 package
-        // 3. Wallet signing integration with Reown
+        const paymentRequirements = paymentData.paymentRequirements[0]
+
+        // Step 3: Create and sign payment header using wallet
+        console.log('[x402-Base] Step 3: Signing payment with wallet...')
+        const paymentHeader = await createPaymentHeader(
+          walletClient,
+          1, // x402 version
+          paymentRequirements
+        )
+
+        // Step 4: Retry request with payment header
+        console.log('[x402-Base] Step 4: Sending payment...')
+        const paymentResponse = await fetch(
+          `/api/x402/tip/${slug}/pay-base?amount=${amount}&token=USDC`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-payment': paymentHeader,
+            },
+          }
+        )
+
+        if (!paymentResponse.ok) {
+          const errorData = await paymentResponse.json().catch(() => ({ error: 'Payment verification failed' }))
+          console.error('[x402-Base] Payment error:', errorData)
+          throw new Error(errorData.error || `Payment failed with status ${paymentResponse.status}`)
+        }
+
+        const result = await paymentResponse.json()
+        console.log('[x402-Base] Payment successful:', result)
+
+        if (result.tip?.signature) {
+          setTxSignature(result.tip.signature)
+        }
       }
 
       setError(null)
