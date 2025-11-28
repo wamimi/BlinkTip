@@ -2,24 +2,13 @@
  * Base x402 Payment Endpoint
  *
  * Handles tipping on Base blockchain using CDP's x402 protocol.
- * Supports USDC stablecoin payments with fee-free settlement.
- *
- * Flow:
- * 1. GET: Returns 402 Payment Required with payment requirements
- * 2. Client signs payment and retries with x-payment header
- * 3. Verifies payment via CDP facilitator and settles on-chain directly to creator
+ * Manual implementation using x402 verify functions.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { useFacilitator } from 'x402/verify'
+import { facilitator } from '@coinbase/x402'
 import { supabase } from '@/lib/supabase'
-
-// Note: Full CDP x402 implementation requires:
-// 1. CDP API keys (CDP_API_KEY_ID, CDP_API_KEY_SECRET)
-// 2. Import { facilitator } from '@coinbase/x402'
-// 3. Configure network (base or base-sepolia)
-
-// For testnet, you can use the community facilitator:
-// { url: 'https://x402.org/facilitator' }
 
 export async function GET(
   request: NextRequest,
@@ -52,7 +41,6 @@ export async function GET(
 
     const url = new URL(request.url)
     const amount = url.searchParams.get('amount') || '0.01'
-    const token = url.searchParams.get('token') || 'USDC'
     const agentId = url.searchParams.get('agent_id')
     const contentUrl = url.searchParams.get('content_url')
 
@@ -65,65 +53,94 @@ export async function GET(
       )
     }
 
-    // Check for x-payment header (payment attempt)
+    // Determine network
+    const network = (process.env.NEXT_PUBLIC_BASE_NETWORK || 'base-sepolia') as 'base' | 'base-sepolia'
+
+    // Get facilitator functions
+    const { verify, settle } = useFacilitator(facilitator)
+
+    // Check if payment header exists
     const paymentHeader = request.headers.get('x-payment')
 
-    // Determine network
-    const network = process.env.NEXT_PUBLIC_BASE_NETWORK || 'base-sepolia'
-    const isTestnet = network === 'base-sepolia'
-
-    // If no payment header, return 402 Payment Required
     if (!paymentHeader) {
-      // Return 402 with payment requirements
-      // CDP's x402 client will automatically handle this response
-      return NextResponse.json(
-        {
-          error: 'Payment Required',
-          payment_requirements: {
-            pay_to_address: creator.evm_wallet_address,
-            price: `$${amount}`,
-            network: network,
-            token: 'USDC',
-            description: `Tip ${creator.name} $${amount} USDC on Base`,
-            facilitator: isTestnet
-              ? 'https://x402.org/facilitator'
-              : 'cdp', // CDP facilitator for mainnet
+      // No payment provided - return 402 with payment requirements
+      const usdcDecimals = 6
+      const amountInSmallestUnit = Math.floor(amountNum * Math.pow(10, usdcDecimals))
+
+      // USDC contract addresses
+      const usdcAddresses = {
+        'base': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+        'base-sepolia': '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
+      }
+
+      const paymentRequirements = {
+        scheme: 'exact' as const,
+        to: creator.evm_wallet_address as `0x${string}`,
+        network,
+        price: {
+          amount: amountInSmallestUnit.toString(),
+          asset: {
+            address: usdcAddresses[network] as `0x${string}`,
+            decimals: usdcDecimals,
           },
         },
+        resource: request.url,
+        description: `Tip ${creator.name} $${amount} USDC on Base`,
+      }
+
+      return NextResponse.json(
         {
-          status: 402,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+          x402Version: 1,
+          paymentRequirements: [paymentRequirements],
+        },
+        { status: 402 }
       )
     }
 
-    // Payment header present - verify and settle
-    // TODO: Implement full CDP x402 verification flow
-    // This requires:
-    // 1. Parse payment header
-    // 2. Verify payment via CDP facilitator
-    // 3. Settle transaction on-chain
-    // 4. Record tip in database
+    // Payment header exists - verify and settle
+    console.log('[Base x402] Verifying payment...')
 
-    // For now, return success response
-    // Full implementation will be added when CDP API keys are configured
+    const verificationResult = await verify(paymentHeader)
+
+    if (!verificationResult.isValid) {
+      console.error('[Base x402] Payment verification failed:', verificationResult.error)
+      return NextResponse.json(
+        { error: 'Payment verification failed', reason: verificationResult.error },
+        { status: 402 }
+      )
+    }
+
+    console.log('[Base x402] Payment verified, settling...')
+
+    // Settle the payment on-chain
+    const settlementResult = await settle(paymentHeader)
+
+    if (!settlementResult.success) {
+      console.error('[Base x402] Settlement failed:', settlementResult.error)
+      return NextResponse.json(
+        { error: 'Payment settlement failed', reason: settlementResult.error },
+        { status: 500 }
+      )
+    }
+
+    console.log('[Base x402] Payment settled:', settlementResult.transactionHash)
+
+    // Record tip in database
     const { data: tip } = await supabase
       .from('tips')
       .insert({
         creator_id: creator.id,
-        from_address: agentId || 'base_tipper',
+        from_address: agentId || verificationResult.from || 'base_tipper',
         amount: amountNum,
         token: 'USDC',
-        signature: `pending_base_${Date.now()}`,
+        signature: settlementResult.transactionHash || 'pending',
         source: agentId ? 'agent' : 'human',
-        status: 'pending',
+        status: 'confirmed',
         chain: 'base',
         network: network,
         metadata: {
           network: network,
-          facilitator: isTestnet ? 'community' : 'cdp',
+          facilitator: 'cdp',
           agent_id: agentId,
           content_url: contentUrl,
         },
@@ -131,6 +148,7 @@ export async function GET(
       .select()
       .single()
 
+    // Return success with tip info
     return NextResponse.json({
       success: true,
       message: `Successfully tipped ${creator.name} on Base`,
@@ -142,7 +160,7 @@ export async function GET(
         chain: 'base',
         network: network,
         slug: creator.slug,
-        note: 'Full x402 verification pending CDP API keys setup',
+        signature: settlementResult.transactionHash,
       },
     })
   } catch (error) {
