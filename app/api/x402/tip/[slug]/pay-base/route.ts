@@ -56,6 +56,27 @@ export async function GET(
     // Determine network
     const network = (process.env.NEXT_PUBLIC_BASE_NETWORK || 'base-sepolia') as 'base' | 'base-sepolia'
 
+    // USDC configuration
+    const usdcDecimals = 6
+    const amountInSmallestUnit = Math.floor(amountNum * Math.pow(10, usdcDecimals))
+    const usdcAddresses = {
+      'base': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      'base-sepolia': '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
+    }
+
+    // Standard x402 payment requirements (for 402 response to client)
+    const paymentRequirements = {
+      scheme: 'exact' as const,
+      payTo: creator.evm_wallet_address,
+      network,
+      maxAmountRequired: amountInSmallestUnit.toString(), // Must be string
+      asset: usdcAddresses[network],
+      resource: request.url,
+      description: `Tip ${creator.name} $${amount} USDC on Base`,
+      mimeType: 'application/json',
+      maxTimeoutSeconds: 300,
+    }
+
     // Get facilitator functions
     const { verify, settle } = useFacilitator(facilitator)
 
@@ -64,30 +85,6 @@ export async function GET(
 
     if (!paymentHeader) {
       // No payment provided - return 402 with payment requirements
-      const usdcDecimals = 6
-      const amountInSmallestUnit = Math.floor(amountNum * Math.pow(10, usdcDecimals))
-
-      // USDC contract addresses
-      const usdcAddresses = {
-        'base': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-        'base-sepolia': '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
-      }
-
-      const paymentRequirements = {
-        scheme: 'exact' as const,
-        to: creator.evm_wallet_address as `0x${string}`,
-        network,
-        price: {
-          amount: amountInSmallestUnit.toString(),
-          asset: {
-            address: usdcAddresses[network] as `0x${string}`,
-            decimals: usdcDecimals,
-          },
-        },
-        resource: request.url,
-        description: `Tip ${creator.name} $${amount} USDC on Base`,
-      }
-
       return NextResponse.json(
         {
           x402Version: 1,
@@ -99,13 +96,49 @@ export async function GET(
 
     // Payment header exists - verify and settle
     console.log('[Base x402] Verifying payment...')
+    console.log('[Base x402] Payment header received:', paymentHeader.substring(0, 100) + '...')
 
-    const verificationResult = await verify(paymentHeader)
+    // Parse the payment payload from the header
+    let paymentPayload
+    try {
+      const decoded = Buffer.from(paymentHeader, 'base64').toString('utf-8')
+      paymentPayload = JSON.parse(decoded)
+      console.log('[Base x402] Decoded payment payload:', paymentPayload)
+    } catch (e) {
+      console.error('[Base x402] Failed to parse payment header:', e)
+      return NextResponse.json(
+        { error: 'Invalid payment header format' },
+        { status: 400 }
+      )
+    }
+
+    // CDP facilitator expects internal format with price.amount, price.asset
+    const facilitatorRequirements = {
+      scheme: 'exact' as const,
+      to: creator.evm_wallet_address as `0x${string}`,
+      network,
+      price: {
+        amount: amountInSmallestUnit.toString(), // String for facilitator
+        asset: {
+          address: usdcAddresses[network] as `0x${string}`,
+          decimals: usdcDecimals,
+          eip712: {
+            name: 'USD Coin',
+            version: '2',
+          },
+        },
+      },
+      resource: request.url,
+      description: `Tip ${creator.name} $${amount} USDC on Base`,
+    }
+
+    // verify() expects payment payload and facilitator-format payment requirements
+    const verificationResult = await verify(paymentPayload, facilitatorRequirements as any)
 
     if (!verificationResult.isValid) {
-      console.error('[Base x402] Payment verification failed:', verificationResult.error)
+      console.error('[Base x402] Payment verification failed:', verificationResult.invalidReason)
       return NextResponse.json(
-        { error: 'Payment verification failed', reason: verificationResult.error },
+        { error: 'Payment verification failed', reason: verificationResult.invalidReason },
         { status: 402 }
       )
     }
@@ -113,27 +146,27 @@ export async function GET(
     console.log('[Base x402] Payment verified, settling...')
 
     // Settle the payment on-chain
-    const settlementResult = await settle(paymentHeader)
+    const settlementResult = await settle(paymentPayload, facilitatorRequirements as any)
 
     if (!settlementResult.success) {
-      console.error('[Base x402] Settlement failed:', settlementResult.error)
+      console.error('[Base x402] Settlement failed:', settlementResult.errorReason)
       return NextResponse.json(
-        { error: 'Payment settlement failed', reason: settlementResult.error },
+        { error: 'Payment settlement failed', reason: settlementResult.errorReason },
         { status: 500 }
       )
     }
 
-    console.log('[Base x402] Payment settled:', settlementResult.transactionHash)
+    console.log('[Base x402] Payment settled:', settlementResult.transaction)
 
     // Record tip in database
     const { data: tip } = await supabase
       .from('tips')
       .insert({
         creator_id: creator.id,
-        from_address: agentId || verificationResult.from || 'base_tipper',
+        from_address: agentId || verificationResult.payer || 'base_tipper',
         amount: amountNum,
         token: 'USDC',
-        signature: settlementResult.transactionHash || 'pending',
+        signature: settlementResult.transaction || 'pending',
         source: agentId ? 'agent' : 'human',
         status: 'confirmed',
         chain: 'base',
@@ -160,7 +193,7 @@ export async function GET(
         chain: 'base',
         network: network,
         slug: creator.slug,
-        signature: settlementResult.transactionHash,
+        signature: settlementResult.transaction,
       },
     })
   } catch (error) {
