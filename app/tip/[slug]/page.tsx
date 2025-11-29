@@ -122,11 +122,14 @@ export default function TipPage() {
         }
 
         const paymentRequirements = paymentData.paymentRequirements[0]
+        console.log('[x402-Base] Payment requirements received:', JSON.stringify(paymentRequirements, null, 2))
 
         // Step 3: Create and sign payment header using wallet
         console.log('[x402-Base] Step 3: Signing payment with wallet...')
+
+        // Pass the full wallet client - it already has account and signTypedData
         const paymentHeader = await createPaymentHeader(
-          walletClient,
+          walletClient as any, // Type assertion - wagmi's WalletClient is compatible but types don't match exactly
           1, // x402 version
           paymentRequirements
         )
