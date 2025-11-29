@@ -39,6 +39,12 @@ export async function GET(
       )
     }
 
+    console.log('[Base x402] Creator info:', {
+      slug: creator.slug,
+      name: creator.name,
+      evm_wallet_address: creator.evm_wallet_address,
+    })
+
     const url = new URL(request.url)
     const amount = url.searchParams.get('amount') || '0.01'
     const agentId = url.searchParams.get('agent_id')
@@ -76,6 +82,8 @@ export async function GET(
       mimeType: 'application/json',
       maxTimeoutSeconds: 300,
     }
+
+    console.log('[Base x402] Payment requirements (standard x402 format):', JSON.stringify(paymentRequirements, null, 2))
 
     // Get facilitator functions
     const { verify, settle } = useFacilitator(facilitator)
