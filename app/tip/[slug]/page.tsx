@@ -127,11 +127,18 @@ export default function TipPage() {
         // Step 3: Create and sign payment header using wallet
         console.log('[x402-Base] Step 3: Signing payment with wallet...')
 
-        // Pass the full wallet client - it already has account and signTypedData
+        // Pass the full wallet client with RPC configuration
+        // The x402 SDK needs to query the USDC contract for EIP-712 domain info
         const paymentHeader = await createPaymentHeader(
           walletClient as any, // Type assertion - wagmi's WalletClient is compatible but types don't match exactly
           1, // x402 version
-          paymentRequirements
+          paymentRequirements,
+          {
+            rpcUrls: {
+              'base-sepolia': 'https://sepolia.base.org',
+              'base': 'https://mainnet.base.org'
+            }
+          }
         )
 
         // Step 4: Retry request with payment header
