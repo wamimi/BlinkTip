@@ -1,8 +1,8 @@
-import { cookieStorage, createStorage, http } from '@wagmi/core'
+import { cookieStorage, createStorage } from '@wagmi/core'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { SolanaAdapter } from '@reown/appkit-adapter-solana/react'
 import { baseSepolia, celoAlfajores } from '@reown/appkit/networks'
-import { solana, solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
+import { solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
 
 // Get Project ID from environment
 export const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID
@@ -23,18 +23,14 @@ export const solanaNetworks = [
   solanaTestnet   // Solana testnet
 ]
 
-// Wagmi Adapter for EVM chains with explicit transports
+// Wagmi Adapter for EVM chains (Base Sepolia, Celo Alfajores)
 export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({
     storage: cookieStorage
   }),
   ssr: true,
   projectId,
-  networks: evmNetworks,
-  transports: {
-    [baseSepolia.id]: http('https://sepolia.base.org'),
-    [celoAlfajores.id]: http('https://alfajores-forno.celo-testnet.org')
-  }
+  networks: evmNetworks
 })
 
 // Solana Adapter
