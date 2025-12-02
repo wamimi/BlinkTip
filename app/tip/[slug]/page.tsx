@@ -93,7 +93,7 @@ export default function TipPage() {
         console.log('[x402-Base] Starting x402 tip flow...', { amount, creator: slug })
         console.log('[x402-Base] Wallet client:', walletClient.account.address)
 
-        // Import x402 client helpers
+        // Import x402 client helper
         const { createPaymentHeader } = await import('x402/client')
 
         // Step 1: Make initial request to get 402 Payment Required
@@ -126,23 +126,13 @@ export default function TipPage() {
         console.log('[x402-Base] Payment requirements received:', JSON.stringify(paymentRequirements, null, 2))
 
         // Step 3: Create and sign payment header using wallet
+        // Now that paymentRequirements includes extra.name and extra.version,
+        // the x402 SDK will create the correct EIP-712 domain for USDC
         console.log('[x402-Base] Step 3: Signing payment with wallet...')
-        console.log('[x402-Base] Wallet chain:', walletClient.chain)
-        console.log('[x402-Base] Public client available:', !!publicClient)
-
-        // Create a combined client with both wallet (signing) and public (read) capabilities
-        // The x402 SDK needs read access to query the USDC contract for EIP-712 domain
-        const combinedClient = Object.assign({}, walletClient, {
-          // Ensure the client can read contract data
-          readContract: publicClient?.readContract,
-          // Keep all wallet signing capabilities
-          signTypedData: walletClient.signTypedData,
-          account: walletClient.account,
-          chain: walletClient.chain
-        })
+        console.log('[x402-Base] USDC domain from extra:', paymentRequirements.extra)
 
         const paymentHeader = await createPaymentHeader(
-          combinedClient as any,
+          walletClient as any,
           1, // x402 version
           paymentRequirements
         )
