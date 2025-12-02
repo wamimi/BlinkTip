@@ -1,15 +1,17 @@
 /**
  * Base x402 Payment Endpoint
  *
- * Handles tipping on Base blockchain using CDP's x402 protocol.
+ * Handles tipping on Base blockchain using x402 protocol.
  * Manual implementation using x402 verify functions.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { useFacilitator } from 'x402/verify'
-import { facilitator } from '@coinbase/x402'
 import { supabase } from '@/lib/supabase'
 import { getAddress } from 'viem'
+
+// Testnet facilitator URL
+const TESTNET_FACILITATOR_URL = 'https://x402.org/facilitator'
 
 export async function GET(
   request: NextRequest,
@@ -90,12 +92,13 @@ export async function GET(
 
     console.log('[Base x402] Payment requirements (standard x402 format):', JSON.stringify(paymentRequirements, null, 2))
 
-    // Get facilitator functions
-    console.log('[Base x402] CDP API Key ID:', process.env.CDP_API_KEY_ID ? 'Set ✓' : 'Missing ✗')
-    console.log('[Base x402] CDP API Secret:', process.env.CDP_API_KEY_SECRET ? 'Set ✓' : 'Missing ✗')
-    console.log('[Base x402] Facilitator config:', facilitator)
+    // Use testnet facilitator for base-sepolia
+    const facilitatorConfig = {
+      url: TESTNET_FACILITATOR_URL as `${string}://${string}`
+    }
 
-    const { verify, settle } = useFacilitator(facilitator)
+    console.log('[Base x402] Using facilitator:', facilitatorConfig.url)
+    const { verify, settle } = useFacilitator(facilitatorConfig)
 
     // Check if payment header exists
     const paymentHeader = request.headers.get('x-payment')
@@ -182,7 +185,7 @@ export async function GET(
         network: network,
         metadata: {
           network: network,
-          facilitator: 'cdp',
+          facilitator: 'x402.org',
           agent_id: agentId,
           content_url: contentUrl,
         },
