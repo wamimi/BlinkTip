@@ -3,7 +3,7 @@
 import { wagmiAdapter, solanaAdapter, projectId, evmNetworks, solanaNetworks } from '@/config/reown'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createAppKit } from '@reown/appkit/react'
-import { solana } from '@reown/appkit/networks'
+import { baseSepolia } from '@reown/appkit/networks'
 import { type ReactNode } from 'react'
 import { cookieToInitialState, WagmiProvider, type Config } from 'wagmi'
 
@@ -25,8 +25,8 @@ if (!projectId) {
 createAppKit({
   adapters: [wagmiAdapter, solanaAdapter],
   projectId,
-  networks: [...evmNetworks, ...solanaNetworks] as any, // Combined EVM (Base, Celo) and Solana networks
-  defaultNetwork: solana,
+  networks: [...evmNetworks, ...solanaNetworks] as any, // Combined testnet networks
+  defaultNetwork: baseSepolia, // Default to Base Sepolia testnet
   metadata,
   features: {
     analytics: true,

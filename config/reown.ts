@@ -1,8 +1,8 @@
 import { cookieStorage, createStorage } from '@wagmi/core'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { SolanaAdapter } from '@reown/appkit-adapter-solana/react'
-import { base, celo, celoAlfajores } from '@reown/appkit/networks'
-import { solana, solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
+import { baseSepolia, celoAlfajores } from '@reown/appkit/networks'
+import { solanaTestnet, solanaDevnet } from '@reown/appkit/networks'
 
 // Get Project ID from environment
 export const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID
@@ -11,21 +11,19 @@ if (!projectId) {
   throw new Error('NEXT_PUBLIC_REOWN_PROJECT_ID is not defined')
 }
 
-// Define EVM networks (Base, Celo)
+// Define EVM networks for TESTNET (Base Sepolia, Celo Alfajores)
 export const evmNetworks = [
-  base,           // Base mainnet
-  celo,           // Celo mainnet
-  celoAlfajores   // Celo testnet (Alfajores = Celo Sepolia equivalent)
+  baseSepolia,    // Base testnet (Sepolia)
+  celoAlfajores   // Celo testnet (Alfajores)
 ]
 
-// Define Solana networks
+// Define Solana networks for TESTNET
 export const solanaNetworks = [
-  solana,         // Solana mainnet
-  solanaTestnet,  // Solana testnet
-  solanaDevnet    // Solana devnet
+  solanaDevnet,   // Solana devnet (primary for testing)
+  solanaTestnet   // Solana testnet
 ]
 
-// Wagmi Adapter for EVM chains (Base, Celo)
+// Wagmi Adapter for EVM chains (Base Sepolia, Celo Alfajores)
 export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({
     storage: cookieStorage
