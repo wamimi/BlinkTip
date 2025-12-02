@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { useFacilitator } from 'x402/verify'
 import { facilitator } from '@coinbase/x402'
 import { supabase } from '@/lib/supabase'
+import { getAddress } from 'viem'
 
 export async function GET(
   request: NextRequest,
@@ -71,12 +72,16 @@ export async function GET(
     }
 
     // Standard x402 payment requirements (for 402 response to client)
+    // Ensure addresses are checksummed
+    const checksummedPayTo = getAddress(creator.evm_wallet_address)
+    const checksummedAsset = getAddress(usdcAddresses[network])
+
     const paymentRequirements = {
       scheme: 'exact' as const,
-      payTo: creator.evm_wallet_address,
+      payTo: checksummedPayTo,
       network,
       maxAmountRequired: amountInSmallestUnit.toString(), // Must be string
-      asset: usdcAddresses[network],
+      asset: checksummedAsset,
       resource: request.url,
       description: `Tip ${creator.name} $${amount} USDC on Base`,
       mimeType: 'application/json',
