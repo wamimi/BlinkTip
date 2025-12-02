@@ -88,6 +88,10 @@ export async function GET(
       description: `Tip ${creator.name} $${amount} USDC on Base`,
       mimeType: 'application/json',
       maxTimeoutSeconds: 300,
+      extra: {
+        name: 'USDC',
+        version: '2'
+      }
     }
 
     console.log('[Base x402] Payment requirements (standard x402 format):', JSON.stringify(paymentRequirements, null, 2))
