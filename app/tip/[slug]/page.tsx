@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useAppKitAccount, useAppKit } from '@reown/appkit/react'
-import { useWalletClient } from 'wagmi'
+import { useWalletClient, usePublicClient } from 'wagmi'
 
 type Creator = {
   slug: string
@@ -25,6 +25,7 @@ export default function TipPage() {
   const { address, isConnected } = useAppKitAccount()
   const { open } = useAppKit()
   const { data: walletClient } = useWalletClient()
+  const publicClient = usePublicClient()
 
   const [creator, setCreator] = useState<Creator | null>(null)
   const [loading, setLoading] = useState(true)
@@ -126,19 +127,24 @@ export default function TipPage() {
 
         // Step 3: Create and sign payment header using wallet
         console.log('[x402-Base] Step 3: Signing payment with wallet...')
+        console.log('[x402-Base] Wallet chain:', walletClient.chain)
+        console.log('[x402-Base] Public client available:', !!publicClient)
 
-        // Pass the full wallet client with RPC configuration
-        // The x402 SDK needs to query the USDC contract for EIP-712 domain info
+        // Create a combined client with both wallet (signing) and public (read) capabilities
+        // The x402 SDK needs read access to query the USDC contract for EIP-712 domain
+        const combinedClient = Object.assign({}, walletClient, {
+          // Ensure the client can read contract data
+          readContract: publicClient?.readContract,
+          // Keep all wallet signing capabilities
+          signTypedData: walletClient.signTypedData,
+          account: walletClient.account,
+          chain: walletClient.chain
+        })
+
         const paymentHeader = await createPaymentHeader(
-          walletClient as any, // Type assertion - wagmi's WalletClient is compatible but types don't match exactly
+          combinedClient as any,
           1, // x402 version
-          paymentRequirements,
-          {
-            rpcUrls: {
-              'base-sepolia': 'https://sepolia.base.org',
-              'base': 'https://mainnet.base.org'
-            }
-          }
+          paymentRequirements
         )
 
         // Step 4: Retry request with payment header
