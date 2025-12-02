@@ -86,6 +86,10 @@ export async function GET(
     console.log('[Base x402] Payment requirements (standard x402 format):', JSON.stringify(paymentRequirements, null, 2))
 
     // Get facilitator functions
+    console.log('[Base x402] CDP API Key ID:', process.env.CDP_API_KEY_ID ? 'Set ✓' : 'Missing ✗')
+    console.log('[Base x402] CDP API Secret:', process.env.CDP_API_KEY_SECRET ? 'Set ✓' : 'Missing ✗')
+    console.log('[Base x402] Facilitator config:', facilitator)
+
     const { verify, settle } = useFacilitator(facilitator)
 
     // Check if payment header exists
@@ -120,28 +124,20 @@ export async function GET(
       )
     }
 
-    // CDP facilitator expects internal format with price.amount, price.asset
-    const facilitatorRequirements = {
-      scheme: 'exact' as const,
-      to: creator.evm_wallet_address as `0x${string}`,
-      network,
-      price: {
-        amount: amountInSmallestUnit.toString(), // String for facilitator
-        asset: {
-          address: usdcAddresses[network] as `0x${string}`,
-          decimals: usdcDecimals,
-          eip712: {
-            name: 'USD Coin',
-            version: '2',
-          },
-        },
-      },
-      resource: request.url,
-      description: `Tip ${creator.name} $${amount} USDC on Base`,
-    }
+    // The facilitator uses the SAME standard x402 format as the client!
+    console.log('[Base x402] Using standard x402 PaymentRequirements for verify/settle')
 
-    // verify() expects payment payload and facilitator-format payment requirements
-    const verificationResult = await verify(paymentPayload, facilitatorRequirements as any)
+    // verify() expects payment payload and standard payment requirements
+    let verificationResult
+    try {
+      verificationResult = await verify(paymentPayload, paymentRequirements as any)
+      console.log('[Base x402] Verification result:', verificationResult)
+    } catch (error: any) {
+      console.error('[Base x402] Verify failed:', error)
+      console.error('[Base x402] Error message:', error.message)
+      console.error('[Base x402] Error cause:', error.cause)
+      throw error
+    }
 
     if (!verificationResult.isValid) {
       console.error('[Base x402] Payment verification failed:', verificationResult.invalidReason)
@@ -153,8 +149,8 @@ export async function GET(
 
     console.log('[Base x402] Payment verified, settling...')
 
-    // Settle the payment on-chain
-    const settlementResult = await settle(paymentPayload, facilitatorRequirements as any)
+    // Settle the payment on-chain using the same standard format
+    const settlementResult = await settle(paymentPayload, paymentRequirements as any)
 
     if (!settlementResult.success) {
       console.error('[Base x402] Settlement failed:', settlementResult.errorReason)
