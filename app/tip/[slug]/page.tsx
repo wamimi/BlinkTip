@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useAppKitAccount, useAppKit } from '@reown/appkit/react'
-import { useWalletClient, usePublicClient } from 'wagmi'
+import { useWalletClient } from 'wagmi'
 
+// Define Creator Type
 type Creator = {
   slug: string
   name: string
@@ -12,26 +13,21 @@ type Creator = {
   avatar_url: string
   wallet_address: string | null
   evm_wallet_address?: string
-  supported_chains?: string[]
 }
 
-const TIP_AMOUNTS = [0.01, 0.05, 0.1]
+const TIP_AMOUNTS = [1, 5, 10, 20]
 
 export default function TipPage() {
   const params = useParams()
   const slug = params.slug as string
-
-  // Reown AppKit hooks - unified wallet for all chains
   const { address, isConnected } = useAppKitAccount()
   const { open } = useAppKit()
   const { data: walletClient } = useWalletClient()
-  const publicClient = usePublicClient()
 
   const [creator, setCreator] = useState<Creator | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedChain, setSelectedChain] = useState<'solana' | 'base'>('solana')
-  const [selectedAmount, setSelectedAmount] = useState(0.01)
-  const [customAmount, setCustomAmount] = useState('')
+  const [amount, setAmount] = useState<number | ''>(5)
   const [tipping, setTipping] = useState(false)
   const [txSignature, setTxSignature] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -44,7 +40,7 @@ export default function TipPage() {
         const data = await response.json()
         setCreator(data.creator)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load creator')
+        setError(err instanceof Error ? err.message : 'Failed to load profile')
       } finally {
         setLoading(false)
       }
@@ -52,347 +48,190 @@ export default function TipPage() {
     fetchCreator()
   }, [slug])
 
+  // --- LOGIC: Keeping your existing Tip Logic ---
   const handleTip = async () => {
     setTipping(true)
     setError(null)
     setTxSignature(null)
 
     try {
-      const amount = customAmount ? parseFloat(customAmount) : selectedAmount
-
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error('Invalid tip amount')
-      }
-
-      if (!address || !isConnected) {
-        throw new Error('Please connect your wallet')
-      }
+      const tipAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+      if (!tipAmount || tipAmount <= 0) throw new Error('Invalid amount')
+      if (!address || !isConnected) throw new Error('Please connect your wallet')
 
       if (selectedChain === 'solana') {
-        // Solana tipping via x402
-        if (!creator?.wallet_address) {
-          throw new Error('Creator does not accept tips on Solana')
-        }
-
-        // TODO: Implement Solana x402 tipping with Reown wallet
-        // This requires adapting the x402-solana client to work with Reown's Solana adapter
-        console.log('[x402-Solana] Starting tip flow...', { amount, creator: slug })
-
-        throw new Error('Solana tipping with Reown coming soon - pending x402-solana integration')
-
+        if (!creator?.wallet_address) throw new Error('Creator does not accept Solana tips yet')
+        // Placeholder for x402 Solana Logic
+        throw new Error('Solana x402 integration in progress...')
       } else if (selectedChain === 'base') {
-        // Base tipping via x402 protocol using CDP facilitator
-        if (!creator?.evm_wallet_address) {
-          throw new Error('Creator does not accept tips on Base')
-        }
+        if (!creator?.evm_wallet_address) throw new Error('Creator does not accept Base tips yet')
+        if (!walletClient) throw new Error('Wallet not connected')
 
-        if (!walletClient) {
-          throw new Error('Wallet not connected. Please reconnect your wallet.')
-        }
-
-        console.log('[x402-Base] Starting x402 tip flow...', { amount, creator: slug })
-        console.log('[x402-Base] Wallet client:', walletClient.account.address)
-
-        // Import x402 client helper
+        // Import x402 client dynamically
         const { createPaymentHeader } = await import('x402/client')
 
-        // Step 1: Make initial request to get 402 Payment Required
-        console.log('[x402-Base] Step 1: Requesting payment requirements...')
-        const initialResponse = await fetch(
-          `/api/x402/tip/${slug}/pay-base?amount=${amount}&token=USDC`,
-          {
+        // 1. Get Payment Requirements
+        const initRes = await fetch(`/api/x402/tip/${slug}/pay-base?amount=${tipAmount}&token=USDC`)
+        if (initRes.status !== 402) throw new Error('Payment initialization failed')
+        const paymentData = await initRes.json()
+        
+        // 2. Sign
+        const paymentHeader = await createPaymentHeader(walletClient as any, 1, paymentData.paymentRequirements[0])
+
+        // 3. Submit
+        const finalRes = await fetch(`/api/x402/tip/${slug}/pay-base?amount=${tipAmount}&token=USDC`, {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        )
-
-        if (initialResponse.status !== 402) {
-          // If not 402, something went wrong
-          const errorData = await initialResponse.json().catch(() => ({ error: 'Unexpected response' }))
-          throw new Error(errorData.error || `Expected 402 Payment Required, got ${initialResponse.status}`)
-        }
-
-        // Step 2: Parse payment requirements from 402 response
-        const paymentData = await initialResponse.json()
-        console.log('[x402-Base] Step 2: Payment requirements received:', paymentData)
-
-        if (!paymentData.paymentRequirements || paymentData.paymentRequirements.length === 0) {
-          throw new Error('No payment requirements returned from server')
-        }
-
-        const paymentRequirements = paymentData.paymentRequirements[0]
-        console.log('[x402-Base] Payment requirements received:', JSON.stringify(paymentRequirements, null, 2))
-
-        // Step 3: Create and sign payment header using wallet
-        // Now that paymentRequirements includes extra.name and extra.version,
-        // the x402 SDK will create the correct EIP-712 domain for USDC
-        console.log('[x402-Base] Step 3: Signing payment with wallet...')
-        console.log('[x402-Base] USDC domain from extra:', paymentRequirements.extra)
-
-        const paymentHeader = await createPaymentHeader(
-          walletClient as any,
-          1, // x402 version
-          paymentRequirements
-        )
-
-        // Step 4: Retry request with payment header
-        console.log('[x402-Base] Step 4: Sending payment...')
-        const paymentResponse = await fetch(
-          `/api/x402/tip/${slug}/pay-base?amount=${amount}&token=USDC`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-payment': paymentHeader,
-            },
-          }
-        )
-
-        if (!paymentResponse.ok) {
-          const errorData = await paymentResponse.json().catch(() => ({ error: 'Payment verification failed' }))
-          console.error('[x402-Base] Payment error:', errorData)
-          throw new Error(errorData.error || `Payment failed with status ${paymentResponse.status}`)
-        }
-
-        const result = await paymentResponse.json()
-        console.log('[x402-Base] Payment successful:', result)
-
-        if (result.tip?.signature) {
-          setTxSignature(result.tip.signature)
-        }
+            headers: { 'Content-Type': 'application/json', 'x-payment': paymentHeader }
+        })
+        
+        if (!finalRes.ok) throw new Error('Payment verification failed')
+        const result = await finalRes.json()
+        if (result.tip?.signature) setTxSignature(result.tip.signature)
       }
-
-      setError(null)
     } catch (err) {
-      console.error('[Tip] Error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to send tip')
+      setError(err instanceof Error ? err.message : 'Transaction failed')
     } finally {
       setTipping(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900">
-        <div className="text-center">
-          <div className="text-4xl mb-4 animate-pulse">💰</div>
-          <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">Loading creator...</div>
-        </div>
+  if (loading) return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-500 animate-pulse">Loading Profile...</p>
       </div>
-    )
-  }
+    </div>
+  )
 
-  if (error && !creator) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-5xl mb-4">😕</div>
-          <div className="text-red-600 dark:text-red-400 text-xl font-bold mb-2">Creator Not Found</div>
-          <p className="text-gray-600 dark:text-gray-400">{error}</p>
-        </div>
+  if (!creator) return (
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-2">Creator Not Found</h1>
+        <p className="text-gray-500">Check the URL and try again.</p>
       </div>
-    )
-  }
-
-  if (!creator) return null
-
-  const explorerUrl = txSignature
-    ? selectedChain === 'solana'
-      ? `https://explorer.solana.com/tx/${txSignature}?cluster=${
-          process.env.NEXT_PUBLIC_NETWORK === 'solana-mainnet-beta' ? 'mainnet' : 'devnet'
-        }`
-      : `https://sepolia.basescan.org/tx/${txSignature}`
-    : null
-
-  // Check if creator supports selected chain
-  const creatorSupportsSolana = creator?.wallet_address && creator.wallet_address.length > 0
-  const creatorSupportsBase = creator?.evm_wallet_address && creator.evm_wallet_address.length > 0
+    </div>
+  )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-zinc-900 dark:via-black dark:to-zinc-900">
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="mb-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">BlinkTip</h1>
-          <button
-            onClick={() => open()}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold transition-all shadow-lg"
-          >
-            {isConnected ? 'Connected' : 'Connect Wallet'}
-          </button>
-        </div>
+    <div className="min-h-screen bg-zinc-50 dark:bg-black py-12 px-4 flex items-center justify-center relative overflow-hidden">
+      {/* Background Ambience */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse-glow" />
+      </div>
 
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-8 text-white">
-            <div className="flex items-center gap-6">
-              {creator.avatar_url && (
-                <img
-                  src={creator.avatar_url}
-                  alt={creator.name}
-                  className="w-24 h-24 rounded-full border-4 border-white shadow-xl"
-                />
-              )}
-              <div>
-                <h2 className="text-3xl font-bold mb-2">{creator.name}</h2>
-                <p className="text-purple-100 text-lg">{creator.bio}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-8">
-            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl">
-              <p className="text-sm text-blue-900 dark:text-blue-200">
-                <strong>💡 Multi-Chain Tipping:</strong> Send tips on Solana or Base. Connect your wallet once with Reown, choose your chain, and tip with USDC. All payments verified via x402 protocol.
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
-                Select Blockchain
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedChain('solana')}
-                  disabled={!creatorSupportsSolana}
-                  className={`py-4 px-4 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center justify-center gap-2 ${
-                    selectedChain === 'solana'
-                      ? 'bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg'
-                      : !creatorSupportsSolana
-                      ? 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                      : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-gray-200'
-                  }`}
-                >
-                  <span className="text-2xl">◎</span>
-                  <span>Solana</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedChain('base')}
-                  disabled={!creatorSupportsBase}
-                  className={`py-4 px-4 rounded-xl font-bold transition-all transform hover:scale-105 flex items-center justify-center gap-2 ${
-                    selectedChain === 'base'
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg'
-                      : !creatorSupportsBase
-                      ? 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                      : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-gray-200'
-                  }`}
-                >
-                  <span className="text-2xl">🔵</span>
-                  <span>Base</span>
-                </button>
-              </div>
-              {!creatorSupportsSolana && selectedChain === 'solana' && (
-                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                  This creator hasn't added a Solana wallet address yet.
-                </p>
-              )}
-              {!creatorSupportsBase && selectedChain === 'base' && (
-                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                  This creator hasn't added a Base wallet address yet.
-                </p>
-              )}
-            </div>
-
-            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Select Tip Amount</h3>
-
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              {TIP_AMOUNTS.map((amount) => (
-                <button
-                  key={amount}
-                  onClick={() => {
-                    setSelectedAmount(amount)
-                    setCustomAmount('')
-                  }}
-                  className={`py-4 px-4 rounded-xl font-bold transition-all transform hover:scale-105 ${
-                    selectedAmount === amount && !customAmount
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
-                      : 'bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-gray-200'
-                  }`}
-                >
-                  ${amount}
-                </button>
-              ))}
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">
-                Or Enter Custom Amount
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none text-lg font-semibold transition-all"
+      <div className="relative w-full max-w-md glass-card rounded-[2rem] overflow-hidden animate-slide-up border border-white/20 dark:border-zinc-800 shadow-2xl">
+        
+        {/* Creator Header - Gradient Banner */}
+        <div className="relative h-32 bg-gradient-to-br from-purple-600 to-blue-600">
+          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
+            <div className="p-1.5 bg-white dark:bg-black rounded-full shadow-xl">
+              <img 
+                src={creator.avatar_url || `https://ui-avatars.com/api/?name=${creator.name}`} 
+                className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-black bg-gray-200"
+                alt={creator.name} 
               />
             </div>
-
-            {!isConnected ? (
-              <div className="text-center py-8 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-800">
-                <p className="text-gray-700 dark:text-gray-300 font-semibold mb-4">
-                  Connect your wallet to send a tip
-                </p>
-                <button
-                  onClick={() => open()}
-                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold text-lg shadow-lg transition-all"
-                >
-                  Connect Wallet
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleTip}
-                disabled={tipping || (selectedChain === 'solana' && !creatorSupportsSolana) || (selectedChain === 'base' && !creatorSupportsBase)}
-                className={`w-full font-bold py-5 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] text-lg ${
-                  selectedChain === 'solana'
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 text-white'
-                    : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:from-gray-400 disabled:to-gray-400 text-white'
-                }`}
-              >
-                {tipping
-                  ? 'Processing Payment...'
-                  : `Send $${customAmount || selectedAmount} USDC Tip on ${selectedChain === 'solana' ? 'Solana' : 'Base'}`}
-              </button>
-            )}
-
-            {error && (
-              <div className="mt-6 p-6 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-xl">
-                <p className="text-red-700 dark:text-red-300 font-bold text-lg mb-2">❌ Payment Failed</p>
-                <p className="text-red-600 dark:text-red-400">{error}</p>
-              </div>
-            )}
-
-            {txSignature && (
-              <div className="mt-6 p-6 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 rounded-xl">
-                <p className="text-green-800 dark:text-green-300 font-bold text-lg mb-3">
-                  ✅ Tip Sent Successfully!
-                </p>
-                <p className="text-green-700 dark:text-green-400 mb-4">
-                  {selectedChain === 'solana'
-                    ? 'Your tip was verified and settled on Solana via the x402 protocol. Thank you for supporting this creator!'
-                    : 'Your tip was verified and settled on Base via the x402 protocol. Thank you for supporting this creator!'}
-                </p>
-                {explorerUrl && (
-                  <a
-                    href={explorerUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-block px-4 py-2 font-semibold rounded-lg transition-colors ${
-                      selectedChain === 'solana'
-                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
-                  >
-                    View on {selectedChain === 'solana' ? 'Solana' : 'Base'} Explorer →
-                  </a>
-                )}
-              </div>
-            )}
           </div>
+        </div>
+
+        <div className="pt-16 pb-8 px-8 text-center">
+          <h1 className="text-2xl font-bold mb-1 tracking-tight">{creator.name}</h1>
+          <p className="text-gray-500 text-sm mb-8 max-w-[280px] mx-auto line-clamp-2 leading-relaxed">{creator.bio}</p>
+
+          {/* Chain Selector */}
+          <div className="bg-zinc-100 dark:bg-zinc-900/50 p-1.5 rounded-xl flex mb-8 border border-zinc-200 dark:border-zinc-800">
+            <button 
+              onClick={() => setSelectedChain('solana')}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${selectedChain === 'solana' ? 'bg-white dark:bg-zinc-800 shadow-sm text-purple-600 scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
+              <span>◎</span> Solana
+            </button>
+            <button 
+              onClick={() => setSelectedChain('base')}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${selectedChain === 'base' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-600 scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+            >
+              <span>🔵</span> Base
+            </button>
+          </div>
+
+          {/* Amount Grid */}
+          <div className="grid grid-cols-4 gap-3 mb-6">
+            {TIP_AMOUNTS.map(amt => (
+              <button
+                key={amt}
+                onClick={() => setAmount(amt)}
+                className={`py-3 rounded-xl font-bold transition-all border ${amount === amt ? 'border-purple-500 bg-purple-500/10 text-purple-600' : 'border-zinc-200 dark:border-zinc-800 hover:border-purple-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900/30'}`}
+              >
+                ${amt}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Amount Input */}
+          <div className="relative mb-8 group">
+            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xl">$</span>
+            <input 
+              type="number" 
+              value={amount} 
+              onChange={(e) => setAmount(Number(e.target.value))}
+              className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl py-5 pl-10 pr-4 text-center font-bold text-3xl outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder:text-gray-300"
+              placeholder="0.00"
+            />
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400 bg-zinc-200 dark:bg-zinc-800 px-2 py-1 rounded">USDC</div>
+          </div>
+
+          {/* Action Button */}
+          {!isConnected ? (
+            <button 
+              onClick={() => open()} 
+              className="w-full py-4 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg"
+            >
+              Connect Wallet
+            </button>
+          ) : (
+             <button 
+              onClick={handleTip} 
+              disabled={tipping}
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {tipping ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Processing...
+                </span>
+              ) : (
+                `Send $${amount || '0'} Tip`
+              )}
+            </button>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-xl font-medium animate-slide-up">
+              {error}
+            </div>
+          )}
+
+          {/* Success Message */}
+          {txSignature && (
+            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-sm rounded-xl font-medium animate-slide-up border border-green-200 dark:border-green-800">
+              <p className="font-bold mb-1">🎉 Payment Successful!</p>
+              <a 
+                href={selectedChain === 'solana' ? `https://explorer.solana.com/tx/${txSignature}?cluster=devnet` : `https://sepolia.basescan.org/tx/${txSignature}`}
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-green-800"
+              >
+                View Transaction
+              </a>
+            </div>
+          )}
+          
+          <div className="mt-8 flex items-center justify-center gap-2 opacity-40 hover:opacity-60 transition-opacity">
+             <span className="text-xs font-mono text-gray-500">SECURED BY x402 PROTOCOL</span>
+          </div>
+
         </div>
       </div>
     </div>
