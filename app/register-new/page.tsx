@@ -20,6 +20,12 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false)
   const [tipLink, setTipLink] = useState('')
   const [blinkUrl, setBlinkUrl] = useState('')
+  const [solanaAddress, setSolanaAddress] = useState('')
+  const [evmAddress, setEvmAddress] = useState('')
+
+  // Determine connection type BEFORE using in useEffect
+  const isEVMConnection = caipAddress?.startsWith('eip155:')
+  const isSolanaConnection = caipAddress?.startsWith('solana:')
 
   useEffect(() => {
     if (session?.user) {
@@ -29,38 +35,81 @@ export default function RegisterPage() {
     }
   }, [session])
 
+  // Auto-detect BOTH Solana and EVM addresses from multi-chain wallet
+  useEffect(() => {
+    if (!isConnected) {
+      setSolanaAddress('')
+      setEvmAddress('')
+      return
+    }
+
+    const detectAddresses = async () => {
+      // Set current connected address first
+      if (isSolanaConnection && address) {
+        setSolanaAddress(address)
+      } else if (isEVMConnection && address) {
+        setEvmAddress(address)
+      }
+
+      // Try to detect the OTHER chain's address from the same wallet
+      try {
+        // If currently on Solana, try to get EVM address
+        if (isSolanaConnection) {
+          if (typeof window !== 'undefined' && (window as any).ethereum) {
+            const accounts = await (window as any).ethereum.request({ method: 'eth_accounts' })
+            if (accounts && accounts[0]) {
+              setEvmAddress(accounts[0])
+              console.log('[Register] Detected EVM address from multi-chain wallet:', accounts[0])
+            }
+          }
+        }
+
+        // If currently on EVM, try to get Solana address
+        if (isEVMConnection) {
+          if (typeof window !== 'undefined' && (window as any).solana) {
+            try {
+              const resp = await (window as any).solana.connect({ onlyIfTrusted: true })
+              if (resp && resp.publicKey) {
+                setSolanaAddress(resp.publicKey.toString())
+                console.log('[Register] Detected Solana address from multi-chain wallet:', resp.publicKey.toString())
+              }
+            } catch (e) {
+              // Wallet might not support Solana or not trusted yet
+            }
+          }
+        }
+      } catch (err) {
+        console.log('[Register] Could not detect additional chain address:', err)
+      }
+    }
+
+    detectAddresses()
+  }, [isConnected, address, caipAddress, isSolanaConnection, isEVMConnection])
+
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
     setSlug(value)
   }
-
-  const isEVMConnection = caipAddress?.startsWith('eip155:')
-  const isSolanaConnection = caipAddress?.startsWith('solana:')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isConnected || !address) { setError('Please connect your wallet first'); return }
     if (!name.trim()) { setError('Name is required'); return }
 
+    // Require at least one address
+    if (!solanaAddress && !evmAddress) {
+      setError('Could not detect any wallet addresses. Please reconnect your wallet.')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
     try {
+      // Build supported chains based on detected addresses
       const supportedChains = []
-      let walletAddress = ''
-      let evmWalletAddress = ''
-
-      if (isSolanaConnection) {
-        supportedChains.push('solana')
-        walletAddress = address
-      } else if (isEVMConnection) {
-        supportedChains.push('base', 'celo')
-        evmWalletAddress = address
-        if (embeddedWalletInfo) {
-          supportedChains.push('solana')
-          walletAddress = address
-        }
-      }
+      if (solanaAddress) supportedChains.push('solana')
+      if (evmAddress) supportedChains.push('base') // We support Base for EVM
 
       const isTwitterAuth = embeddedWalletInfo?.authProvider === 'x'
       const twitterData = isTwitterAuth ? {
@@ -75,13 +124,19 @@ export default function RegisterPage() {
         twitter_verified: !!session.user.twitterId,
       } : {}
 
+      console.log('[Register] Submitting with addresses:', {
+        solana: solanaAddress || 'none',
+        evm: evmAddress || 'none',
+        supportedChains
+      })
+
       const response = await fetch('/api/creators', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug,
-          wallet_address: walletAddress || undefined,
-          evm_wallet_address: evmWalletAddress || undefined,
+          wallet_address: solanaAddress || undefined, // Database column is wallet_address (Solana)
+          evm_wallet_address: evmAddress || undefined,
           name,
           bio: bio.trim() || undefined,
           avatar_url: avatarUrl.trim() || undefined,
@@ -118,7 +173,32 @@ export default function RegisterPage() {
             </div>
             
             <h1 className="text-4xl font-bold mb-4 text-gradient">You're Live!</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-10 text-lg">Your universal tip page is ready to accept funds.</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-lg">Your universal tip page is ready to accept funds.</p>
+
+            {/* Show registered addresses */}
+            {(solanaAddress || evmAddress) && (
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-4 mb-8">
+                <p className="text-xs font-bold text-green-700 dark:text-green-300 uppercase tracking-wider mb-3">Registered Wallet Addresses</p>
+                <div className="space-y-2 text-sm">
+                  {solanaAddress && (
+                    <div className="flex items-center gap-2 justify-center">
+                      <span>◎ Solana:</span>
+                      <span className="font-mono text-green-700 dark:text-green-300">
+                        {solanaAddress.slice(0, 4)}...{solanaAddress.slice(-4)}
+                      </span>
+                    </div>
+                  )}
+                  {evmAddress && (
+                    <div className="flex items-center gap-2 justify-center">
+                      <span>⬡ Base:</span>
+                      <span className="font-mono text-green-700 dark:text-green-300">
+                        {evmAddress.slice(0, 6)}...{evmAddress.slice(-4)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="bg-zinc-100 dark:bg-zinc-800/50 p-6 rounded-2xl border border-zinc-200 dark:border-zinc-700 mb-8 text-left">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Universal Link</p>
@@ -217,7 +297,48 @@ export default function RegisterPage() {
             
             <h2 className="text-2xl font-bold mb-8">Profile Details</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
-              
+
+              {/* Show detected wallet addresses */}
+              {isConnected && (
+                <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Detected Wallet Addresses</p>
+                  <div className="space-y-2 text-sm">
+                    {solanaAddress ? (
+                      <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-2">
+                        <span className="text-green-600">✓</span>
+                        <span className="font-semibold">◎ Solana:</span>
+                        <span className="font-mono text-xs">
+                          {solanaAddress.slice(0, 4)}...{solanaAddress.slice(-4)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-2">
+                        <span className="text-yellow-600">⚠</span>
+                        <span className="text-xs">Solana address not detected</span>
+                      </div>
+                    )}
+
+                    {evmAddress ? (
+                      <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-2">
+                        <span className="text-green-600">✓</span>
+                        <span className="font-semibold">⬡ Base:</span>
+                        <span className="font-mono text-xs">
+                          {evmAddress.slice(0, 6)}...{evmAddress.slice(-4)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-2">
+                        <span className="text-yellow-600">⚠</span>
+                        <span className="text-xs">EVM address not detected</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                    Multi-chain wallets like Phantom support both. You can update addresses later in your dashboard.
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label className="block text-sm font-bold ml-1 text-gray-700 dark:text-gray-300">Username / Slug</label>
                 <div className="flex items-center bg-gray-50 dark:bg-zinc-800/50 rounded-2xl border border-gray-200 dark:border-zinc-700 focus-within:border-purple-500 focus-within:ring-4 focus-within:ring-purple-500/10 transition-all">
