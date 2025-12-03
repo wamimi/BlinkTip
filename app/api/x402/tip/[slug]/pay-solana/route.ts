@@ -6,11 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { useFacilitator } from 'x402/verify'
+import { FacilitatorClient } from 'x402-solana/server'
 import { supabase } from '@/lib/supabase'
 
-// Testnet facilitator URL
-const TESTNET_FACILITATOR_URL = 'https://x402.org/facilitator'
+// PAI Network facilitator URL
+const PAI_FACILITATOR_URL = 'https://facilitator.payai.network'
+const facilitatorClient = new FacilitatorClient(PAI_FACILITATOR_URL)
 
 export async function GET(
   request: NextRequest,
@@ -34,7 +35,7 @@ export async function GET(
     }
 
     // Verify creator has Solana wallet address
-    if (!creator.solana_wallet_address) {
+    if (!creator.wallet_address) {
       return NextResponse.json(
         { error: 'Creator does not accept tips on Solana' },
         { status: 400 }
@@ -44,7 +45,7 @@ export async function GET(
     console.log('[Solana x402] Creator info:', {
       slug: creator.slug,
       name: creator.name,
-      solana_wallet_address: creator.solana_wallet_address,
+      wallet_address: creator.wallet_address,
     })
 
     const url = new URL(request.url)
@@ -78,7 +79,7 @@ export async function GET(
     // Build payment requirements for Solana
     const paymentRequirements: any = {
       scheme: 'exact' as const,
-      payTo: creator.solana_wallet_address, // Base58 Solana address
+      payTo: creator.wallet_address, // Base58 Solana address
       network,
       maxAmountRequired: amountInSmallestUnit.toString(), // Must be string
       asset: usdcMints[network], // Base58 USDC mint address
@@ -96,84 +97,66 @@ export async function GET(
       console.log('[Solana x402] feePayer set to:', payer)
     }
 
-    console.log('[Solana x402] Payment requirements:', JSON.stringify(paymentRequirements, null, 2))
-
-    // Use testnet facilitator for solana-devnet
-    const facilitatorConfig = {
-      url: TESTNET_FACILITATOR_URL as `${string}://${string}`
-    }
-
-    console.log('[Solana x402] Using facilitator:', facilitatorConfig.url)
-    const { verify, settle } = useFacilitator(facilitatorConfig)
+    console.log('[Solana x402-PAI] Payment requirements:', JSON.stringify(paymentRequirements, null, 2))
+    console.log('[Solana x402-PAI] Using PAI facilitator:', PAI_FACILITATOR_URL)
 
     // Check if payment header exists
     const paymentHeader = request.headers.get('x-payment')
 
     if (!paymentHeader) {
-      // No payment provided - return 402 with payment requirements
+      // No payment provided - return 402 with payment requirements (PAI format)
       return NextResponse.json(
         {
           x402Version: 1,
-          paymentRequirements: [paymentRequirements],
+          accepts: [paymentRequirements],
         },
         { status: 402 }
       )
     }
 
-    // Payment header exists - verify and settle
-    console.log('[Solana x402] Verifying payment...')
-    console.log('[Solana x402] Payment header received:', paymentHeader.substring(0, 100) + '...')
+    // Payment header exists - verify and settle with PAI facilitator
+    console.log('[Solana x402-PAI] Verifying payment...')
+    console.log('[Solana x402-PAI] Payment header received')
 
-    // Parse the payment payload from the header
-    let paymentPayload
-    try {
-      const decoded = Buffer.from(paymentHeader, 'base64').toString('utf-8')
-      paymentPayload = JSON.parse(decoded)
-      console.log('[Solana x402] Decoded payment payload:', paymentPayload)
-    } catch (e) {
-      console.error('[Solana x402] Failed to parse payment header:', e)
-      return NextResponse.json(
-        { error: 'Invalid payment header format' },
-        { status: 400 }
-      )
-    }
-
-    console.log('[Solana x402] Using standard x402 PaymentRequirements for verify/settle')
-
-    // verify() expects payment payload and standard payment requirements
+    // Verify payment with PAI facilitator
     let verificationResult
     try {
-      verificationResult = await verify(paymentPayload, paymentRequirements)
-      console.log('[Solana x402] Verification result:', verificationResult)
+      verificationResult = await facilitatorClient.verifyPayment(
+        paymentHeader,
+        paymentRequirements
+      )
+      console.log('[Solana x402-PAI] Verification result:', verificationResult)
     } catch (error: any) {
-      console.error('[Solana x402] Verify failed:', error)
-      console.error('[Solana x402] Error message:', error.message)
-      console.error('[Solana x402] Error cause:', error.cause)
+      console.error('[Solana x402-PAI] Verify failed:', error)
+      console.error('[Solana x402-PAI] Error message:', error.message)
       throw error
     }
 
     if (!verificationResult.isValid) {
-      console.error('[Solana x402] Payment verification failed:', verificationResult.invalidReason)
+      console.error('[Solana x402-PAI] Payment verification failed:', verificationResult.invalidReason)
       return NextResponse.json(
         { error: 'Payment verification failed', reason: verificationResult.invalidReason },
         { status: 402 }
       )
     }
 
-    console.log('[Solana x402] Payment verified, settling...')
+    console.log('[Solana x402-PAI] Payment verified, settling...')
 
-    // Settle the payment on-chain using the same standard format
-    const settlementResult = await settle(paymentPayload, paymentRequirements)
+    // Settle the payment on-chain via PAI facilitator
+    const settlementResult = await facilitatorClient.settlePayment(
+      paymentHeader,
+      paymentRequirements
+    )
 
     if (!settlementResult.success) {
-      console.error('[Solana x402] Settlement failed:', settlementResult.errorReason)
+      console.error('[Solana x402-PAI] Settlement failed:', settlementResult.errorReason)
       return NextResponse.json(
         { error: 'Payment settlement failed', reason: settlementResult.errorReason },
         { status: 500 }
       )
     }
 
-    console.log('[Solana x402] Payment settled:', settlementResult.transaction)
+    console.log('[Solana x402-PAI] Payment settled:', settlementResult.transaction)
 
     // Record tip in database
     const { data: tip } = await supabase
@@ -190,7 +173,7 @@ export async function GET(
         network: network,
         metadata: {
           network: network,
-          facilitator: 'x402.org',
+          facilitator: 'payai.network',
           agent_id: agentId,
           content_url: contentUrl,
         },
