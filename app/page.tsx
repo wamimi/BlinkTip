@@ -2,116 +2,161 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
-      <div className="max-w-6xl mx-auto px-6 py-16">
-        <header className="text-center mb-20">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            BlinkTip
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            One universal link. Tips from humans AND AI agents. Everywhere.
-          </p>
-        </header>
+    <div className="min-h-screen bg-zinc-50 dark:bg-black selection:bg-purple-500 selection:text-white relative">
+      
+      {/* Ambient Background Glows */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px] animate-pulse-glow" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-glow [animation-delay:2s]" />
+      </div>
 
-        <section className="mb-20">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8 md:p-12">
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold mb-4 text-red-600 dark:text-red-400">The Problem</h2>
-              <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-                Creators juggle fragmented tipping across platforms. PayPal here, Venmo there, Cash App somewhere else.
-                Audiences need to hunt through link-in-bio pages just to send support. Meanwhile, AI agents can't tip at all.
-              </p>
+      <div className="relative z-10 max-w-7xl mx-auto px-6">
+        {/* Navbar */}
+        <nav className="flex items-center justify-between py-8 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/20">
+              B
             </div>
-
-            <div className="border-t dark:border-zinc-700 pt-8">
-              <h2 className="text-3xl font-bold mb-4 text-green-600 dark:text-green-400">The Solution</h2>
-              <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-6">
-                BlinkTip gives you ONE link that works everywhere. Share it on Twitter, Instagram, TikTok, or anywhere else.
-                Humans tip on Solana, Base, and Celo. AI agents tip via x402 protocol. No more juggling payment platforms.
-              </p>
-              <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6">
-                <p className="font-mono text-sm md:text-base text-purple-900 dark:text-purple-200">
-                  blinktip.com/tip/your-name
-                </p>
-              </div>
-            </div>
+            <span className="text-2xl font-bold tracking-tight">BlinkTip</span>
           </div>
-        </section>
-
-        <section className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8 text-center">
-              <div className="text-4xl mb-4">🔗</div>
-              <h3 className="text-xl font-bold mb-3">1. Create Your Link</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Connect your wallet (email/social or external) and choose your custom slug
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8 text-center">
-              <div className="text-4xl mb-4">📤</div>
-              <h3 className="text-xl font-bold mb-3">2. Share Everywhere</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Post on Twitter, Instagram, TikTok, or anywhere your audience is
-              </p>
-            </div>
-
-            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-8 text-center">
-              <div className="text-4xl mb-4">💰</div>
-              <h3 className="text-xl font-bold mb-3">3. Receive Tips</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Get USDC tips on Solana, Base, and Celo from humans and AI agents
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-2 text-blue-900 dark:text-blue-200">Twitter/X Blinks</h3>
-              <p className="text-gray-700 dark:text-gray-300">
-                Your link unfurls as an interactive Solana Blink on Twitter, letting followers tip instantly without leaving the app
-              </p>
-            </div>
-
-            <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-2 text-purple-900 dark:text-purple-200">x402 Protocol</h3>
-              <p className="text-gray-700 dark:text-gray-300">
-                AI agents can autonomously discover and tip you using the x402 web payment standard
-              </p>
-            </div>
-
-            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-2 text-green-900 dark:text-green-200">Universal Compatibility</h3>
-              <p className="text-gray-700 dark:text-gray-300">
-                One link works on ALL platforms - Instagram, TikTok, YouTube, email, anywhere you can share a URL
-              </p>
-            </div>
-
-            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-6">
-              <h3 className="text-xl font-bold mb-2 text-orange-900 dark:text-orange-200">Multi-Chain Support</h3>
-              <p className="text-gray-700 dark:text-gray-300">
-                Accept tips on Solana, Base, and Celo - all from one universal link
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="text-center">
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl shadow-2xl p-12 text-white">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
-            <p className="text-lg mb-8 opacity-90">
-              Create your universal tip link in less than 60 seconds
-            </p>
+          <div className="flex items-center gap-4 md:gap-8">
+            <Link href="/login" className="hidden md:block text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+              Sign In
+            </Link>
             <Link
               href="/register-new"
-              className="inline-block px-8 py-4 bg-white text-purple-600 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg"
+              className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-full font-bold text-sm hover:scale-105 transition-transform duration-200 shadow-xl"
+            >
+              Get Started
+            </Link>
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <header className="py-20 md:py-32 text-center relative">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-sm font-medium mb-8 animate-slide-up">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+            </span>
+            Now live: Tips from AI Agents via x402
+          </div>
+          
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 animate-slide-up [animation-delay:100ms] leading-[1.1]">
+            Tips from <span className="text-gradient">Humans</span><br />
+            AND <span className="text-gradient">AI Agents.</span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-slide-up [animation-delay:200ms]">
+            The universal tipping layer for the agent economy. One link for Solana, Base, and Celo payments.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up [animation-delay:300ms]">
+            <Link
+              href="/register-new"
+              className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-purple-500/30 hover:scale-105 transition-all duration-300"
             >
               Create Your Tip Page
             </Link>
+            <Link
+              href="#how-it-works"
+              className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-white rounded-full font-bold text-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all duration-300"
+            >
+              See How It Works
+            </Link>
+          </div>
+        </header>
+
+        {/* Floating Glass Visual */}
+        <div className="relative mx-auto max-w-4xl mb-32 animate-float pointer-events-none">
+          <div className="glass-card rounded-3xl p-2 transform rotate-1">
+            <div className="bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-black rounded-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
+              {/* Fake Browser Header */}
+              <div className="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-900/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50" />
+                  <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50" />
+                </div>
+                <div className="px-4 py-1 rounded-md bg-gray-200/50 dark:bg-zinc-800 text-xs font-mono text-gray-500 flex items-center gap-2">
+                  <span>🔒</span> blinktip.com/tip/nelly
+                </div>
+                <div className="w-4" />
+              </div>
+              
+              {/* Fake Content */}
+              <div className="p-12 md:p-16 text-center">
+                 <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full mx-auto mb-6 shadow-xl ring-4 ring-white dark:ring-black" />
+                 <h3 className="text-3xl font-bold mb-2">Nelly CyberPro</h3>
+                 <p className="text-gray-500 mb-10">Building the future of AI payments.</p>
+                 
+                 <div className="flex flex-wrap justify-center gap-4">
+                    <div className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-purple-500/20 bg-purple-500/5 text-purple-700 dark:text-purple-300 font-bold shadow-sm">
+                      <span className="text-xl">⚡</span> 
+                      <div>
+                        <div className="text-xs opacity-70 uppercase tracking-wide">Received</div>
+                        5.00 USDC (Solana)
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 text-blue-700 dark:text-blue-300 font-bold shadow-sm">
+                      <span className="text-xl">🤖</span> 
+                      <div>
+                        <div className="text-xs opacity-70 uppercase tracking-wide">AI Agent Tip</div>
+                        2.50 USDC (Base)
+                      </div>
+                    </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <section id="how-it-works" className="mb-32">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Why Creators Choose BlinkTip</h2>
+            <p className="text-gray-500 max-w-2xl mx-auto">The infrastructure layer for the next generation of content monetization.</p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              { title: "One Link, Any Chain", icon: "🌐", desc: "Forget Linktree. One URL accepts Solana, Base, Celo, and more. We route the crypto automatically to your preferred wallet." },
+              { title: "AI Native (x402)", icon: "🤖", desc: "First platform built for the Agent Economy. AI agents can autonomously discover your 402 endpoint and pay you for content." },
+              { title: "Twitter Blinks", icon: "⚡", desc: "Paste your link on X and it turns into a native payment button. Followers tip instantly without leaving the timeline." },
+            ].map((feature, i) => (
+              <div key={i} className="glass-card p-10 rounded-3xl hover:-translate-y-2 transition-transform duration-300 group">
+                <div className="text-5xl mb-6 bg-gray-50 dark:bg-zinc-800 w-20 h-20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  {feature.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="pb-32 text-center">
+          <div className="relative overflow-hidden bg-gradient-to-br from-purple-900 to-blue-900 rounded-[3rem] p-12 md:p-24 text-white shadow-2xl">
+            <div className="relative z-10">
+              <h2 className="text-4xl md:text-6xl font-bold mb-6">Start Earning in Web3 & AI</h2>
+              <p className="text-xl text-purple-100 mb-10 max-w-2xl mx-auto opacity-90">
+                Join thousands of creators receiving tips from humans and autonomous agents today.
+              </p>
+              <Link
+                href="/register-new"
+                className="inline-block px-12 py-5 bg-white text-purple-900 rounded-full font-bold text-xl hover:scale-105 transition-transform shadow-xl"
+              >
+                Claim Your Username
+              </Link>
+            </div>
+            {/* Abstract Shapes */}
+            <div className="absolute top-0 left-0 w-full h-full opacity-40 pointer-events-none mix-blend-overlay">
+              <div className="absolute top-[-50%] left-[-20%] w-[600px] h-[600px] bg-purple-500 rounded-full blur-[120px]" />
+              <div className="absolute bottom-[-50%] right-[-20%] w-[600px] h-[600px] bg-blue-500 rounded-full blur-[120px]" />
+            </div>
           </div>
         </section>
       </div>
