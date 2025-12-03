@@ -20,7 +20,7 @@ const TIP_AMOUNTS = [1, 5, 10, 20]
 export default function TipPage() {
   const params = useParams()
   const slug = params.slug as string
-  const { address, isConnected } = useAppKitAccount()
+  const { address, isConnected, caipAddress } = useAppKitAccount()
   const { open } = useAppKit()
   const { data: walletClient } = useWalletClient()
 
@@ -31,6 +31,10 @@ export default function TipPage() {
   const [tipping, setTipping] = useState(false)
   const [txSignature, setTxSignature] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Detect which network user is connected to
+  const isEVMConnection = caipAddress?.startsWith('eip155:')
+  const isSolanaConnection = caipAddress?.startsWith('solana:')
 
   useEffect(() => {
     async function fetchCreator() {
@@ -60,14 +64,17 @@ export default function TipPage() {
       if (!address || !isConnected) throw new Error('Please connect your wallet')
 
       if (selectedChain === 'solana') {
-        if (!creator?.solana_wallet_address) throw new Error('Creator does not accept Solana tips yet')
+        if (!creator?.wallet_address) throw new Error('Creator does not accept Solana tips yet')
 
-        // Import x402 client dynamically
-        const { createPaymentHeader } = await import('x402/client')
+        // Check if user is connected to Solana network
+        if (!isSolanaConnection) {
+          throw new Error('Please switch to Solana network to tip on Solana. Click your wallet and select Solana Devnet.')
+        }
 
-        console.log('[x402-Solana] Step 1: Getting payment requirements...')
+        console.log('[x402-Solana-PAI] Step 1: Getting payment requirements...')
+        console.log('[x402-Solana-PAI] Tipper address:', address)
 
-        // Step 1: Get Payment Requirements (with feePayer in query params)
+        // Step 1: Get Payment Requirements from backend
         const initRes = await fetch(
           `/api/x402/tip/${slug}/pay-solana?amount=${tipAmount}&token=USDC&payer=${address}`
         )
@@ -78,43 +85,121 @@ export default function TipPage() {
         }
 
         const paymentData = await initRes.json()
-        const paymentRequirements = paymentData.paymentRequirements[0]
+        const paymentRequirements = paymentData.accepts?.[0] || paymentData.paymentRequirements?.[0]
 
-        console.log('[x402-Solana] Step 2: Payment requirements received:', paymentRequirements)
-        console.log('[x402-Solana] Step 3: Signing payment with wallet...')
+        console.log('[x402-Solana-PAI] Payment requirements received:', paymentRequirements)
 
-        // Step 2: Create Solana signer adapter for Reown wallet
-        // The x402 SDK's createPaymentHeader will handle Solana signing automatically
-        // when it detects network: 'solana-devnet'
-        const solanaWalletClient = {
-          address: address as string,
-          signTransaction: async (tx: any) => {
-            // Reown's Solana adapter provides signTransaction
-            if (walletClient && 'signTransaction' in walletClient) {
-              return await (walletClient as any).signTransaction(tx)
-            }
-            throw new Error('Solana wallet not available')
-          }
-        }
+        // Step 2: Build Solana transaction (similar to agent implementation)
+        const {
+          Connection,
+          PublicKey,
+          TransactionMessage,
+          VersionedTransaction,
+          ComputeBudgetProgram,
+        } = await import('@solana/web3.js')
 
-        // Step 3: Sign payment using x402 SDK (automatically routes to Solana path)
-        const paymentHeader = await createPaymentHeader(
-          solanaWalletClient as any,
-          1, // x402 version
-          paymentRequirements
+        const {
+          createTransferCheckedInstruction,
+          getAssociatedTokenAddress,
+          TOKEN_PROGRAM_ID,
+        } = await import('@solana/spl-token')
+
+        const USDC_DEVNET_MINT = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'
+        const RPC_URL = 'https://api.devnet.solana.com'
+
+        const connection = new Connection(RPC_URL, 'confirmed')
+        const fromPubkey = new PublicKey(address)
+        const toPubkey = new PublicKey(paymentRequirements.payTo)
+        const usdcMint = new PublicKey(USDC_DEVNET_MINT)
+
+        // Get fee payer from payment requirements
+        const feePayerAddress = paymentRequirements.extra?.feePayer || paymentRequirements.payTo
+        const feePayerPubkey = new PublicKey(feePayerAddress)
+
+        const fromTokenAccount = await getAssociatedTokenAddress(usdcMint, fromPubkey)
+        const toTokenAccount = await getAssociatedTokenAddress(usdcMint, toPubkey)
+
+        const tokenAmount = BigInt(paymentRequirements.maxAmountRequired)
+
+        console.log('[x402-Solana-PAI] Building transaction...')
+
+        // Build transaction with required instructions (per PAI requirements)
+        const instructions = []
+
+        // 1. Compute budget limit (up to 7000)
+        instructions.push(
+          ComputeBudgetProgram.setComputeUnitLimit({ units: 7000 })
         )
 
-        console.log('[x402-Solana] Step 4: Payment signed, submitting...')
+        // 2. Compute unit price (< 5 lamports)
+        instructions.push(
+          ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 4 })
+        )
 
-        // Step 4: Submit payment with x-payment header
+        // 3. SPL token transfer
+        instructions.push(
+          createTransferCheckedInstruction(
+            fromTokenAccount,
+            usdcMint,
+            toTokenAccount,
+            fromPubkey,
+            tokenAmount,
+            6, // USDC decimals
+            [],
+            TOKEN_PROGRAM_ID
+          )
+        )
+
+        const { blockhash } = await connection.getLatestBlockhash()
+
+        const messageV0 = new TransactionMessage({
+          payerKey: feePayerPubkey,
+          recentBlockhash: blockhash,
+          instructions,
+        }).compileToV0Message()
+
+        const transaction = new VersionedTransaction(messageV0)
+
+        console.log('[x402-Solana-PAI] Step 2: Requesting wallet signature...')
+
+        // Step 3: Sign transaction with wallet
+        const solanaProvider = (window as any).solana as {
+          isConnected: boolean
+          connect: () => Promise<void>
+          signTransaction: <T>(tx: T) => Promise<T>
+        }
+        if (!solanaProvider) {
+          throw new Error('Solana wallet not found')
+        }
+
+        if (!solanaProvider.isConnected) {
+          await solanaProvider.connect()
+        }
+
+        const signedTx = await solanaProvider.signTransaction(transaction)
+
+        console.log('[x402-Solana-PAI] Step 3: Creating payment header...')
+
+        // Step 4: Create payment header from signed transaction (PAI approach)
+        const { createPaymentHeaderFromTransaction } = await import('x402-solana/utils')
+
+        const paymentHeader = createPaymentHeaderFromTransaction(
+          signedTx,
+          paymentRequirements,
+          1 // x402 version
+        )
+
+        console.log('[x402-Solana-PAI] Step 4: Submitting payment...')
+
+        // Step 5: Submit payment with header
         const finalRes = await fetch(
           `/api/x402/tip/${slug}/pay-solana?amount=${tipAmount}&token=USDC&payer=${address}`,
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-              'x-payment': paymentHeader
-            }
+              'x-payment': paymentHeader,
+            },
           }
         )
 
@@ -124,34 +209,49 @@ export default function TipPage() {
         }
 
         const result = await finalRes.json()
-        console.log('[x402-Solana] Success:', result)
+        console.log('[x402-Solana-PAI] Success:', result)
 
         if (result.tip?.signature) {
           setTxSignature(result.tip.signature)
         }
       } else if (selectedChain === 'base') {
         if (!creator?.evm_wallet_address) throw new Error('Creator does not accept Base tips yet')
+
+        // Check if user is connected to EVM network
+        if (!isEVMConnection) {
+          throw new Error('Please switch to Base network to tip on Base. Click your wallet and select Base Sepolia.')
+        }
+
         if (!walletClient) throw new Error('Wallet not connected')
 
         // Import x402 client dynamically
         const { createPaymentHeader } = await import('x402/client')
 
+        console.log('[x402-Base] Step 1: Getting payment requirements...')
+        console.log('[x402-Base] Tipper address (EVM):', address)
+
         // 1. Get Payment Requirements
         const initRes = await fetch(`/api/x402/tip/${slug}/pay-base?amount=${tipAmount}&token=USDC`)
         if (initRes.status !== 402) throw new Error('Payment initialization failed')
         const paymentData = await initRes.json()
-        
+
+        console.log('[x402-Base] Step 2: Payment requirements received')
+        console.log('[x402-Base] Step 3: Signing payment with wallet...')
+
         // 2. Sign
         const paymentHeader = await createPaymentHeader(walletClient as any, 1, paymentData.paymentRequirements[0])
+
+        console.log('[x402-Base] Step 4: Payment signed, submitting...')
 
         // 3. Submit
         const finalRes = await fetch(`/api/x402/tip/${slug}/pay-base?amount=${tipAmount}&token=USDC`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'x-payment': paymentHeader }
         })
-        
+
         if (!finalRes.ok) throw new Error('Payment verification failed')
         const result = await finalRes.json()
+        console.log('[x402-Base] Success:', result)
         if (result.tip?.signature) setTxSignature(result.tip.signature)
       }
     } catch (err) {
@@ -186,7 +286,31 @@ export default function TipPage() {
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse-glow" />
       </div>
 
-      <div className="relative w-full max-w-md glass-card rounded-[2rem] overflow-hidden animate-slide-up border border-white/20 dark:border-zinc-800 shadow-2xl">
+      {/* Top Navigation with Wallet Button */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-lg border-b border-zinc-200 dark:border-zinc-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">BlinkTip</span>
+            </div>
+            <button
+              onClick={() => open()}
+              className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-sm hover:scale-105 transition-transform shadow-lg"
+            >
+              {isConnected ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                </span>
+              ) : (
+                'Connect Wallet'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative w-full max-w-md glass-card rounded-[2rem] overflow-hidden animate-slide-up border border-white/20 dark:border-zinc-800 shadow-2xl mt-16">
         
         {/* Creator Header - Gradient Banner */}
         <div className="relative h-32 bg-gradient-to-br from-purple-600 to-blue-600">
