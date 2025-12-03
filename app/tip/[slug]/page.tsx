@@ -60,9 +60,75 @@ export default function TipPage() {
       if (!address || !isConnected) throw new Error('Please connect your wallet')
 
       if (selectedChain === 'solana') {
-        if (!creator?.wallet_address) throw new Error('Creator does not accept Solana tips yet')
-        // Placeholder for x402 Solana Logic
-        throw new Error('Solana x402 integration in progress...')
+        if (!creator?.solana_wallet_address) throw new Error('Creator does not accept Solana tips yet')
+
+        // Import x402 client dynamically
+        const { createPaymentHeader } = await import('x402/client')
+
+        console.log('[x402-Solana] Step 1: Getting payment requirements...')
+
+        // Step 1: Get Payment Requirements (with feePayer in query params)
+        const initRes = await fetch(
+          `/api/x402/tip/${slug}/pay-solana?amount=${tipAmount}&token=USDC&payer=${address}`
+        )
+
+        if (initRes.status !== 402) {
+          const errorData = await initRes.json()
+          throw new Error(errorData.error || 'Payment initialization failed')
+        }
+
+        const paymentData = await initRes.json()
+        const paymentRequirements = paymentData.paymentRequirements[0]
+
+        console.log('[x402-Solana] Step 2: Payment requirements received:', paymentRequirements)
+        console.log('[x402-Solana] Step 3: Signing payment with wallet...')
+
+        // Step 2: Create Solana signer adapter for Reown wallet
+        // The x402 SDK's createPaymentHeader will handle Solana signing automatically
+        // when it detects network: 'solana-devnet'
+        const solanaWalletClient = {
+          address: address as string,
+          signTransaction: async (tx: any) => {
+            // Reown's Solana adapter provides signTransaction
+            if (walletClient && 'signTransaction' in walletClient) {
+              return await (walletClient as any).signTransaction(tx)
+            }
+            throw new Error('Solana wallet not available')
+          }
+        }
+
+        // Step 3: Sign payment using x402 SDK (automatically routes to Solana path)
+        const paymentHeader = await createPaymentHeader(
+          solanaWalletClient as any,
+          1, // x402 version
+          paymentRequirements
+        )
+
+        console.log('[x402-Solana] Step 4: Payment signed, submitting...')
+
+        // Step 4: Submit payment with x-payment header
+        const finalRes = await fetch(
+          `/api/x402/tip/${slug}/pay-solana?amount=${tipAmount}&token=USDC&payer=${address}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-payment': paymentHeader
+            }
+          }
+        )
+
+        if (!finalRes.ok) {
+          const errorData = await finalRes.json()
+          throw new Error(errorData.error || 'Payment verification failed')
+        }
+
+        const result = await finalRes.json()
+        console.log('[x402-Solana] Success:', result)
+
+        if (result.tip?.signature) {
+          setTxSignature(result.tip.signature)
+        }
       } else if (selectedChain === 'base') {
         if (!creator?.evm_wallet_address) throw new Error('Creator does not accept Base tips yet')
         if (!walletClient) throw new Error('Wallet not connected')
