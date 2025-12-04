@@ -2,16 +2,18 @@
  * Solana x402 Payment Endpoint
  *
  * Handles tipping on Solana blockchain using x402 protocol.
- * Manual implementation using x402 verify functions.
+ * Uses X402PaymentHandler for proper PayAI facilitator integration.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { FacilitatorClient } from 'x402-solana/server'
+import { X402PaymentHandler } from 'x402-solana/server'
 import { supabase } from '@/lib/supabase'
 
-// PAI Network facilitator URL
-const PAI_FACILITATOR_URL = 'https://facilitator.payai.network'
-const facilitatorClient = new FacilitatorClient(PAI_FACILITATOR_URL)
+// Token mint addresses (MUST match what client expects!)
+const TOKENS = {
+  USDC: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr', // USDC Devnet (correct address)
+  CASH: 'CASHedBw9NfhsLBXq1WNVfueVznx255j8LLTScto3S6s', // Phantom CASH
+}
 
 export async function GET(
   request: NextRequest,
@@ -48,11 +50,22 @@ export async function GET(
       wallet_address: creator.wallet_address,
     })
 
+    // Create x402 handler with THIS creator's wallet address (not treasury!)
+    const x402Handler = new X402PaymentHandler({
+      network: 'solana-devnet',
+      treasuryAddress: creator.wallet_address, // ✅ Use creator's wallet
+      facilitatorUrl: 'https://facilitator.payai.network',
+    })
+
+    // Extract payment header if present
+    const paymentHeader = x402Handler.extractPayment(request.headers)
+
+    // Get query parameters
     const url = new URL(request.url)
     const amount = url.searchParams.get('amount') || '0.01'
+    const token = (url.searchParams.get('token') || 'USDC') as 'USDC' | 'CASH'
     const agentId = url.searchParams.get('agent_id')
     const contentUrl = url.searchParams.get('content_url')
-    const payer = url.searchParams.get('payer') // Solana address of the tipper (for feePayer)
 
     // Validate amount
     const amountNum = parseFloat(amount)
@@ -63,116 +76,89 @@ export async function GET(
       )
     }
 
-    // Determine network
-    const network = (process.env.NEXT_PUBLIC_SOLANA_NETWORK || 'solana-devnet') as 'solana' | 'solana-devnet'
+    const tokenMint = TOKENS[token]
+    const amountInMicroUsdc = Math.floor(amountNum * 1_000_000).toString()
 
-    // USDC configuration for Solana
-    const usdcDecimals = 6
-    const amountInSmallestUnit = Math.floor(amountNum * Math.pow(10, usdcDecimals))
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const resourceUrl = `${baseUrl}/api/x402/tip/${slug}/pay-solana?amount=${amount}&token=${token}` as `${string}://${string}`
 
-    // Solana USDC mint addresses
-    const usdcMints = {
-      'solana': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // Mainnet USDC
-      'solana-devnet': '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU' // Devnet USDC
-    }
-
-    // Build payment requirements for Solana
-    const paymentRequirements: any = {
-      scheme: 'exact' as const,
-      payTo: creator.wallet_address, // Base58 Solana address
-      network,
-      maxAmountRequired: amountInSmallestUnit.toString(), // Must be string
-      asset: usdcMints[network], // Base58 USDC mint address
-      resource: request.url,
-      description: `Tip ${creator.name} $${amount} USDC on Solana`,
-      mimeType: 'application/json',
-      maxTimeoutSeconds: 300,
-    }
-
-    // Add feePayer if provided (required for Solana x402)
-    if (payer) {
-      paymentRequirements.extra = {
-        feePayer: payer
-      }
-      console.log('[Solana x402] feePayer set to:', payer)
-    }
+    // Create payment requirements using X402PaymentHandler
+    const paymentRequirements = await x402Handler.createPaymentRequirements({
+      price: {
+        amount: amountInMicroUsdc,
+        asset: {
+          address: tokenMint,
+          decimals: 6,
+        },
+      },
+      network: 'solana-devnet',
+      config: {
+        description: `Tip ${creator.name} $${amount} ${token} on Solana`,
+        resource: resourceUrl,
+      },
+    })
 
     console.log('[Solana x402-PAI] Payment requirements:', JSON.stringify(paymentRequirements, null, 2))
-    console.log('[Solana x402-PAI] Using PAI facilitator:', PAI_FACILITATOR_URL)
 
-    // Check if payment header exists
-    const paymentHeader = request.headers.get('x-payment')
-
+    // If no payment header, return 402 with payment requirements
     if (!paymentHeader) {
-      // No payment provided - return 402 with payment requirements (PAI format)
-      return NextResponse.json(
-        {
-          x402Version: 1,
-          accepts: [paymentRequirements],
-        },
-        { status: 402 }
-      )
+      const response = x402Handler.create402Response(paymentRequirements)
+      console.log('[Solana x402-PAI] Returning 402 with payment requirements')
+      return NextResponse.json(response.body, { status: response.status })
     }
 
-    // Payment header exists - verify and settle with PAI facilitator
+    // Payment header exists - verify with PayAI facilitator
     console.log('[Solana x402-PAI] Verifying payment...')
     console.log('[Solana x402-PAI] Payment header received')
 
-    // Verify payment with PAI facilitator
-    let verificationResult
-    try {
-      verificationResult = await facilitatorClient.verifyPayment(
-        paymentHeader,
-        paymentRequirements
-      )
-      console.log('[Solana x402-PAI] Verification result:', verificationResult)
-    } catch (error: any) {
-      console.error('[Solana x402-PAI] Verify failed:', error)
-      console.error('[Solana x402-PAI] Error message:', error.message)
-      throw error
-    }
-
-    if (!verificationResult.isValid) {
-      console.error('[Solana x402-PAI] Payment verification failed:', verificationResult.invalidReason)
-      return NextResponse.json(
-        { error: 'Payment verification failed', reason: verificationResult.invalidReason },
-        { status: 402 }
-      )
-    }
-
-    console.log('[Solana x402-PAI] Payment verified, settling...')
-
-    // Settle the payment on-chain via PAI facilitator
-    const settlementResult = await facilitatorClient.settlePayment(
+    const verified = await x402Handler.verifyPayment(
       paymentHeader,
       paymentRequirements
     )
 
-    if (!settlementResult.success) {
-      console.error('[Solana x402-PAI] Settlement failed:', settlementResult.errorReason)
+    console.log('[Solana x402-PAI] Verification result:', verified)
+
+    if (!verified.isValid) {
+      console.error('[Solana x402-PAI] Payment verification failed:', verified.invalidReason)
       return NextResponse.json(
-        { error: 'Payment settlement failed', reason: settlementResult.errorReason },
+        { error: 'Invalid payment', reason: verified.invalidReason },
+        { status: 402 }
+      )
+    }
+
+    console.log('[Solana x402-PAI] ✓ Payment verified, settling...')
+
+    // Settle the payment on-chain via PayAI facilitator
+    const settleResult = await x402Handler.settlePayment(
+      paymentHeader,
+      paymentRequirements
+    )
+
+    if (!settleResult.success) {
+      console.error('[Solana x402-PAI] Settlement failed:', settleResult.errorReason)
+      return NextResponse.json(
+        { error: 'Payment settlement failed', reason: settleResult.errorReason },
         { status: 500 }
       )
     }
 
-    console.log('[Solana x402-PAI] Payment settled:', settlementResult.transaction)
+    console.log('[Solana x402-PAI] ✓ Payment settled:', settleResult.transaction)
 
     // Record tip in database
-    const { data: tip } = await supabase
+    const { data: tip, error: tipError } = await supabase
       .from('tips')
       .insert({
         creator_id: creator.id,
-        from_address: agentId || verificationResult.payer || 'solana_tipper',
+        from_address: agentId || verified.payer || 'solana_tipper',
         amount: amountNum,
-        token: 'USDC',
-        signature: settlementResult.transaction || 'pending',
+        token: token,
+        signature: settleResult.transaction || `pending_${Date.now()}`,
         source: agentId ? 'agent' : 'human',
-        status: 'confirmed',
+        status: settleResult.success ? 'confirmed' : 'pending',
         chain: 'solana',
-        network: network,
+        network: 'solana-devnet',
         metadata: {
-          network: network,
+          network: 'solana-devnet',
           facilitator: 'payai.network',
           agent_id: agentId,
           content_url: contentUrl,
@@ -180,6 +166,26 @@ export async function GET(
       })
       .select()
       .single()
+
+    if (tipError) {
+      console.error('[ERROR] Failed to record tip:', tipError)
+    }
+
+    // Record agent action if this is an agent tip
+    if (agentId && !tipError) {
+      await supabase.from('agent_actions').insert({
+        content_url: contentUrl || 'unknown',
+        content_title: creator.name,
+        decision: 'tip',
+        tip_id: tip?.id,
+        reasoning: 'x402 payment completed via Solana',
+        metadata: {
+          agent_id: agentId,
+          network: 'solana-devnet',
+          amount: amountNum,
+        },
+      })
+    }
 
     // Return success with tip info
     return NextResponse.json({
@@ -189,11 +195,11 @@ export async function GET(
         id: tip?.id,
         creator: creator.name,
         amount: amountNum,
-        token: 'USDC',
+        token: token,
         chain: 'solana',
-        network: network,
+        network: 'solana-devnet',
         slug: creator.slug,
-        signature: settlementResult.transaction,
+        signature: settleResult.transaction,
       },
     })
   } catch (error) {
