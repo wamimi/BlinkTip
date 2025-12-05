@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Add authentication
-    
+    const authHeader = request.headers.get("authorization")
 
     // Run the agent
     const result = await runTippingAgent();
