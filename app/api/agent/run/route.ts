@@ -16,6 +16,12 @@ export async function POST(request: NextRequest) {
   try {
     // Add authentication
     const authHeader = request.headers.get("authorization")
+    if (!authHeader || authHeader !== `Bearer ${process.env.AGENT_API_SECRET}`) {
+      return NextResponse.json(
+        { error: "Unauthorized - Invalid or missing API secret" },
+        { status: 401 }
+      )
+    }
 
     // Run the agent
     const result = await runTippingAgent();
