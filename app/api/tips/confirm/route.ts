@@ -5,6 +5,15 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { signature, from_address, creator_slug } = body
 
