@@ -27,5 +27,10 @@ export function validateTipAmount(amount: string): ValidationResult {
     return { valid: false, error: "Exponential notation not allowed" }
   }
 
+  const decimalPlaces = amount.split('.')[1]?.length || 0
+  if (decimalPlaces > 2) {
+    return { valid: false, error: "Amount cannot have more than 2 decimal places" }
+  }
+
   return { valid: true, value: num }
 }
