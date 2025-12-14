@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { X402PaymentHandler } from 'x402-solana/server'
 import { supabase } from '@/lib/supabase'
+import { validateTipAmount } from '@/lib/validation'
 
 // Token mint addresses (MUST match what client expects!)
 const TOKENS = {
@@ -68,13 +69,14 @@ export async function GET(
     const contentUrl = url.searchParams.get('content_url')
 
     // Validate amount
-    const amountNum = parseFloat(amount)
-    if (isNaN(amountNum) || amountNum <= 0) {
+    const validation = validateTipAmount(amount)
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Invalid amount' },
+        { error: validation.error },
         { status: 400 }
       )
     }
+    const amountNum = validation.value!
 
     const tokenMint = TOKENS[token]
     const amountInMicroUsdc = Math.floor(amountNum * 1_000_000).toString()
