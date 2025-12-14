@@ -23,5 +23,9 @@ export function validateTipAmount(amount: string): ValidationResult {
     return { valid: false, error: "Amount cannot exceed $1000" }
   }
 
+  if (amount.includes('e') || amount.includes('E')) {
+    return { valid: false, error: "Exponential notation not allowed" }
+  }
+
   return { valid: true, value: num }
 }
