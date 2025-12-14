@@ -59,6 +59,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.10
         version: 5.90.10(react@19.2.0)
+      '@upstash/redis':
+        specifier: ^1.35.8
+        version: 1.35.8
       '@vercel/kv':
         specifier: ^3.0.0
         version: 3.0.0
