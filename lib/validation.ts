@@ -19,5 +19,9 @@ export function validateTipAmount(amount: string): ValidationResult {
     return { valid: false, error: "Amount must be greater than 0" }
   }
 
+  if (num > 1000) {
+    return { valid: false, error: "Amount cannot exceed $1000" }
+  }
+
   return { valid: true, value: num }
 }
