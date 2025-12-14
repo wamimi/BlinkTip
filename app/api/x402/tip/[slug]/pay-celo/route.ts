@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createThirdwebClient, defineChain } from "thirdweb";
 import { settlePayment, facilitator } from "thirdweb/x402";
 import { supabase } from "@/lib/supabase";
+import { validateTipAmount } from "@/lib/validation";
 
 // Environment configuration
 const THIRDWEB_SECRET_KEY = process.env.THIRDWEB_SECRET_KEY!;
@@ -55,7 +56,7 @@ export async function GET(
   try {
     const { slug } = await params;
     const { searchParams } = new URL(request.url);
-    const amount = parseFloat(searchParams.get("amount") || "0");
+    const amountParam = searchParams.get("amount") || "0";
     const token = searchParams.get("token") || "USDC";
     const agentId = searchParams.get("agent_id");
     const contentUrl = searchParams.get("content_url");
@@ -64,12 +65,14 @@ export async function GET(
     const paymentHeader = request.headers.get("x-payment");
 
     // Validate amount
-    if (!amount || amount <= 0) {
+    const validation = validateTipAmount(amountParam);
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: "Invalid amount" },
+        { error: validation.error },
         { status: 400 }
       );
     }
+    const amount = validation.value!
 
     // Validate token
     if (!["USDC", "cUSD"].includes(token)) {
