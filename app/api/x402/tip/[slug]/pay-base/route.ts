@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { useFacilitator } from 'x402/verify'
 import { supabase } from '@/lib/supabase'
 import { getAddress } from 'viem'
+import { validateTipAmount } from '@/lib/validation'
 
 // Testnet facilitator URL
 const TESTNET_FACILITATOR_URL = 'https://x402.org/facilitator'
@@ -54,13 +55,14 @@ export async function GET(
     const contentUrl = url.searchParams.get('content_url')
 
     // Validate amount
-    const amountNum = parseFloat(amount)
-    if (isNaN(amountNum) || amountNum <= 0) {
+    const validation = validateTipAmount(amount)
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Invalid amount' },
+        { error: validation.error },
         { status: 400 }
       )
     }
+    const amountNum = validation.value!
 
     // Determine network
     const network = (process.env.NEXT_PUBLIC_BASE_NETWORK || 'base-sepolia') as 'base' | 'base-sepolia'
