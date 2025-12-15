@@ -14,6 +14,7 @@ import { createThirdwebClient, defineChain } from "thirdweb";
 import { settlePayment, facilitator } from "thirdweb/x402";
 import { supabase } from "@/lib/supabase";
 import { validateTipAmount } from "@/lib/validation";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Environment configuration
 const THIRDWEB_SECRET_KEY = process.env.THIRDWEB_SECRET_KEY!;
