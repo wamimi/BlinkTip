@@ -10,6 +10,7 @@ import { useFacilitator } from 'x402/verify'
 import { supabase } from '@/lib/supabase'
 import { getAddress } from 'viem'
 import { validateTipAmount } from '@/lib/validation'
+import { rateLimit } from '@/lib/rate-limit'
 
 // Testnet facilitator URL
 const TESTNET_FACILITATOR_URL = 'https://x402.org/facilitator'
