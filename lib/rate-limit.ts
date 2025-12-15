@@ -12,3 +12,10 @@ export interface RateLimitConfig {
   /** Time window in seconds */
   windowInSeconds: number
 }
+
+export interface RateLimitResult {
+  success: boolean
+  limit: number
+  remaining: number
+  reset: number
+}
