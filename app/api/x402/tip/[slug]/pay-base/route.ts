@@ -22,6 +22,20 @@ export async function GET(
   const { slug } = await params
 
   try {
+    // Rate limiting: 20 payment requests per minute per IP
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit(`x402_base:${ip}`, {
+      limit: 20,
+      windowInSeconds: 60,
+    })
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many payment requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     // Fetch creator info
     const { data: creator, error } = await supabase
       .from('creators')
