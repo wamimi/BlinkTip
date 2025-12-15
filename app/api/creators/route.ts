@@ -15,6 +15,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Rate limiting: 5 creator registrations per hour per user
+    const rateLimitResult = await rateLimit(`creator_reg:${session.user.twitterId}`, {
+      limit: 5,
+      windowInSeconds: 3600,
+    })
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many creator registration attempts. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const {
       slug,
