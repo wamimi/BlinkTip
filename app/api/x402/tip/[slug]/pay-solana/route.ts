@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { X402PaymentHandler } from 'x402-solana/server'
 import { supabase } from '@/lib/supabase'
 import { validateTipAmount } from '@/lib/validation'
+import { rateLimit } from '@/lib/rate-limit'
 
 // Token mint addresses (MUST match what client expects!)
 const TOKENS = {
