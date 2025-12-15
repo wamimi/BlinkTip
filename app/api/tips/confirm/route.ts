@@ -15,6 +15,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Rate limiting: 100 tip confirmations per minute per user
+    const rateLimitResult = await rateLimit(`tip_confirm:${session.user.twitterId}`, {
+      limit: 100,
+      windowInSeconds: 60,
+    })
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many confirmation requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { signature, from_address } = body
 
