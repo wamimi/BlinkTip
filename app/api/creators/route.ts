@@ -65,6 +65,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verify Solana wallet ownership if provided
+    if (wallet_address) {
+      if (!wallet_signature || !verification_message) {
+        return NextResponse.json(
+          { error: 'Solana wallet signature and verification message required' },
+          { status: 400 }
+        )
+      }
+
+      const solanaVerification = await verifySolanaSignature(
+        wallet_address,
+        wallet_signature,
+        verification_message
+      )
+
+      if (!solanaVerification.valid) {
+        return NextResponse.json(
+          { error: `Solana wallet verification failed: ${solanaVerification.error}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Verify EVM wallet ownership if provided
+    if (evm_wallet_address) {
+      if (!evm_wallet_signature || !verification_message) {
+        return NextResponse.json(
+          { error: 'EVM wallet signature and verification message required' },
+          { status: 400 }
+        )
+      }
+
+      const evmVerification = await verifyEVMSignature(
+        evm_wallet_address,
+        evm_wallet_signature,
+        verification_message
+      )
+
+      if (!evmVerification.valid) {
+        return NextResponse.json(
+          { error: `EVM wallet verification failed: ${evmVerification.error}` },
+          { status: 400 }
+        )
+      }
+    }
+
     // Validate slug format
     if (!/^[a-z0-9_-]{3,50}$/.test(slug)) {
       return NextResponse.json(
