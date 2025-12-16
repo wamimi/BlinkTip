@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
       wallet_signature,
       evm_wallet_signature,
       verification_message,
+      evm_verification_message,
     } = body
 
     // Validate required fields
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     // Verify EVM wallet ownership if provided
     if (evm_wallet_address) {
-      if (!evm_wallet_signature || !verification_message) {
+      if (!evm_wallet_signature || !evm_verification_message) {
         return NextResponse.json(
           { error: 'EVM wallet signature and verification message required' },
           { status: 400 }
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
       const evmVerification = await verifyEVMSignature(
         evm_wallet_address,
         evm_wallet_signature,
-        verification_message
+        evm_verification_message
       )
 
       if (!evmVerification.valid) {
