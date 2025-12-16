@@ -1,34 +1,25 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { useSession, signIn } from 'next-auth/react'
 import Link from 'next/link'
-import { ConnectButton, useActiveAccount } from "thirdweb/react"
-import { createThirdwebClient, defineChain } from "thirdweb"
-
-// Initialize thirdweb client for frontend
-const thirdwebClient = createThirdwebClient({
-  clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!,
-})
-
-// Define Celo Sepolia chain
-const celoSepolia = defineChain({
-  id: 11142220,
-  rpc: "https://forno.celo-sepolia.celo-testnet.org",
-})
+import { useAppKitProvider, useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react'
+import type { Provider } from '@reown/appkit-adapter-solana/react'
+import { useSignMessage } from 'wagmi'
 
 export default function RegisterPage() {
-  const { publicKey, signMessage } = useWallet()
   const { data: session, status } = useSession()
-  const celoAccount = useActiveAccount()
+  const { address, isConnected } = useAppKitAccount()
+  const { caipNetwork } = useAppKitNetwork()
+  const { walletProvider: solanaWalletProvider } = useAppKitProvider<Provider>('solana')
+  const { signMessageAsync: signEvmMessage } = useSignMessage()
 
   const [slug, setSlug] = useState('')
   const [name, setName] = useState('')
   const [bio, setBio] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
-  const [celoWalletAddress, setCeloWalletAddress] = useState('')
+  const [solanaWalletAddress, setSolanaWalletAddress] = useState('')
+  const [evmWalletAddress, setEvmWalletAddress] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -39,12 +30,28 @@ export default function RegisterPage() {
   const [solanaVerificationMessage, setSolanaVerificationMessage] = useState('')
   const [evmVerificationMessage, setEvmVerificationMessage] = useState('')
 
-  // Auto-fill Celo wallet address when connected
+  // Track which chain user is currently on to detect when they switch
   useEffect(() => {
-    if (celoAccount?.address && !celoWalletAddress) {
-      setCeloWalletAddress(celoAccount.address)
+    if (!isConnected || !address) return
+
+    const isSolana = caipNetwork?.name?.toLowerCase().includes('solana')
+
+    if (isSolana) {
+      // User is on Solana network
+      if (address !== solanaWalletAddress) {
+        setSolanaWalletAddress(address)
+        // Trigger Solana signature request
+        requestSolanaSignature(address)
+      }
+    } else {
+      // User is on EVM network (Base, Celo, etc.)
+      if (address !== evmWalletAddress) {
+        setEvmWalletAddress(address)
+        // Trigger EVM signature request
+        requestEvmSignature(address)
+      }
     }
-  }, [celoAccount, celoWalletAddress])
+  }, [isConnected, address, caipNetwork])
 
   // Auto-fill form with Twitter data when session loads
   useEffect(() => {
@@ -61,60 +68,43 @@ export default function RegisterPage() {
     }
   }, [session])
 
-  // Prompt for Solana wallet signature when wallet connects
-  useEffect(() => {
-    if (publicKey && signMessage && !solanaSignature) {
-      const requestSolanaSignature = async () => {
-        try {
-          const message = `Sign this message to verify your Solana wallet ownership for BlinkTip.\n\nWallet: ${publicKey.toBase58()}\nTimestamp: ${Date.now()}`
-          setSolanaVerificationMessage(message)
+  // Request Solana wallet signature
+  const requestSolanaSignature = async (walletAddress: string) => {
+    if (!solanaWalletProvider || solanaSignature) return
 
-          const messageBytes = new TextEncoder().encode(message)
-          const signature = await signMessage(messageBytes)
-          const signatureBase64 = Buffer.from(signature).toString('base64')
+    try {
+      const message = `Sign this message to verify your Solana wallet ownership for BlinkTip.\n\nWallet: ${walletAddress}\nTimestamp: ${Date.now()}`
+      setSolanaVerificationMessage(message)
 
-          setSolanaSignature(signatureBase64)
-          console.log('✓ Solana wallet signature obtained')
-        } catch (error) {
-          console.error('Failed to sign Solana message:', error)
-          setError('You must sign the message to verify wallet ownership')
-        }
-      }
+      const encodedMessage = new TextEncoder().encode(message)
+      const signature = await solanaWalletProvider.signMessage(encodedMessage)
+      const signatureBase64 = Buffer.from(signature).toString('base64')
 
-      requestSolanaSignature()
+      setSolanaSignature(signatureBase64)
+      console.log('✓ Solana wallet signature obtained')
+    } catch (error) {
+      console.error('Failed to sign Solana message:', error)
+      setError('You must sign the message to verify Solana wallet ownership')
     }
-  }, [publicKey, signMessage, solanaSignature])
+  }
 
-  // Prompt for EVM wallet signature when wallet connects
-  useEffect(() => {
-    if (celoAccount?.address && !evmSignature) {
-      const requestEvmSignature = async () => {
-        try {
-          const message = `Sign this message to verify your EVM wallet ownership for BlinkTip.\n\nWallet: ${celoAccount.address}\nTimestamp: ${Date.now()}`
-          setEvmVerificationMessage(message)
+  // Request EVM wallet signature
+  const requestEvmSignature = async (walletAddress: string) => {
+    if (!signEvmMessage || evmSignature) return
 
-          const ethereum = (window as any).ethereum
-          if (!ethereum) {
-            console.error('No EVM provider found')
-            return
-          }
+    try {
+      const message = `Sign this message to verify your EVM wallet ownership for BlinkTip.\n\nWallet: ${walletAddress}\nTimestamp: ${Date.now()}`
+      setEvmVerificationMessage(message)
 
-          const signature = await ethereum.request({
-            method: 'personal_sign',
-            params: [message, celoAccount.address],
-          })
+      const signature = await signEvmMessage({ message })
 
-          setEvmSignature(signature)
-          console.log('✓ EVM wallet signature obtained')
-        } catch (error) {
-          console.error('Failed to sign EVM message:', error)
-          setError('You must sign the message to verify EVM wallet ownership')
-        }
-      }
-
-      requestEvmSignature()
+      setEvmSignature(signature)
+      console.log('✓ EVM wallet signature obtained')
+    } catch (error) {
+      console.error('Failed to sign EVM message:', error)
+      setError('You must sign the message to verify EVM wallet ownership')
     }
-  }, [celoAccount, evmSignature])
+  }
 
   const validateSlug = (value: string) => {
     const slugRegex = /^[a-z0-9_-]{3,50}$/
@@ -129,8 +119,8 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!publicKey) {
-      setError('Please connect your wallet first')
+    if (!solanaWalletAddress && !evmWalletAddress) {
+      setError('Please connect at least one wallet (Solana or EVM)')
       return
     }
 
@@ -149,6 +139,17 @@ export default function RegisterPage() {
       return
     }
 
+    // Check if we have signatures for connected wallets
+    if (solanaWalletAddress && !solanaSignature) {
+      setError('Please sign the message with your Solana wallet first')
+      return
+    }
+
+    if (evmWalletAddress && !evmSignature) {
+      setError('Please sign the message with your EVM wallet first')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -158,16 +159,19 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug,
-          wallet_address: publicKey.toBase58(),
-          wallet_signature: solanaSignature,
-          verification_message: solanaVerificationMessage,
+          wallet_address: solanaWalletAddress || undefined,
+          wallet_signature: solanaSignature || undefined,
+          verification_message: solanaVerificationMessage || undefined,
           name,
           bio: bio.trim() || undefined,
           avatar_url: avatarUrl.trim() || undefined,
-          evm_wallet_address: celoWalletAddress.trim() || undefined,
+          evm_wallet_address: evmWalletAddress || undefined,
           evm_wallet_signature: evmSignature || undefined,
           evm_verification_message: evmVerificationMessage || undefined,
-          supported_chains: celoWalletAddress.trim() ? ['solana', 'celo'] : ['solana'],
+          supported_chains: [
+            solanaWalletAddress ? 'solana' : null,
+            evmWalletAddress ? 'celo' : null,
+          ].filter(Boolean),
           twitter_id: session.user.twitterId,
           twitter_handle: session.user.twitterHandle,
           twitter_name: session.user.twitterName,
@@ -275,7 +279,7 @@ export default function RegisterPage() {
           <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
             BlinkTip
           </Link>
-          <WalletMultiButton />
+          <appkit-button />
         </div>
 
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-8 md:p-10 border border-gray-100 dark:border-zinc-800">
@@ -336,32 +340,61 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {!publicKey ? (
+              {!isConnected ? (
                 <div className="text-center py-16">
                   <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-8 mb-6">
                     <p className="text-lg text-gray-700 dark:text-gray-300 mb-6 font-semibold">
-                      Step 2: Connect your Solana wallet
+                      Step 2: Connect your wallet(s)
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                      Connect Solana and/or EVM wallets to receive tips.<br />
+                      You'll be prompted to sign a message to verify ownership.
                     </p>
                     <div className="flex justify-center">
-                      <WalletMultiButton />
+                      <appkit-button />
                     </div>
                   </div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Supports Phantom, Solflare, Coinbase Wallet, and more
+                    Supports Phantom, MetaMask, Coinbase Wallet, and more
                   </p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-gray-200 dark:border-zinc-700">
                     <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-                      Connected Wallet
+                      Connected Wallet(s)
                     </label>
-                    <input
-                      type="text"
-                      value={publicKey.toBase58()}
-                      disabled
-                      className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded-lg text-sm font-mono"
-                    />
+                    {solanaWalletAddress && (
+                      <div className="mb-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Solana:</p>
+                        <input
+                          type="text"
+                          value={solanaWalletAddress}
+                          disabled
+                          className="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded-lg text-sm font-mono"
+                        />
+                        {solanaSignature && (
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Signature verified</p>
+                        )}
+                      </div>
+                    )}
+                    {evmWalletAddress && (
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">EVM (Base/Celo):</p>
+                        <input
+                          type="text"
+                          value={evmWalletAddress}
+                          disabled
+                          className="w-full px-4 py-2 bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-600 rounded-lg text-sm font-mono"
+                        />
+                        {evmSignature && (
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Signature verified</p>
+                        )}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                      💡 Switch networks in your wallet to connect both Solana and EVM addresses
+                    </p>
                   </div>
 
                   <div>
@@ -425,32 +458,6 @@ export default function RegisterPage() {
                     {avatarUrl && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-1">
                         Auto-filled from Twitter profile picture
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="border-t-2 border-gray-200 dark:border-zinc-700 pt-6 mt-6">
-                    <h4 className="text-lg font-bold mb-4 text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                      <span>🌱</span> Celo Wallet (Optional)
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Add your Celo wallet to receive tips on Celo blockchain (cUSD, USDC)
-                    </p>
-
-                    <div className="flex items-center gap-3 mb-3">
-                      <ConnectButton client={thirdwebClient} chain={celoSepolia} />
-                    </div>
-
-                    <input
-                      type="text"
-                      value={celoWalletAddress}
-                      onChange={(e) => setCeloWalletAddress(e.target.value)}
-                      placeholder="0x... (auto-fills when you connect wallet)"
-                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-all font-mono text-sm"
-                    />
-                    {celoAccount && (
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-2 ml-1">
-                        Connected: {celoAccount.address.slice(0, 6)}...{celoAccount.address.slice(-4)}
                       </p>
                     )}
                   </div>
