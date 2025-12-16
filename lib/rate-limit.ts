@@ -4,7 +4,12 @@
 
 import { Redis } from '@upstash/redis'
 
-const redis = Redis.fromEnv()
+// Vercel KV uses KV_REST_API_URL and KV_REST_API_TOKEN
+// Upstash SDK expects UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '',
+})
 
 export interface RateLimitConfig {
   /** Maximum number of requests allowed in the window */
