@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { rateLimit } from '@/lib/rate-limit'
+import { verifySolanaSignature, verifyEVMSignature } from '@/lib/wallet-verification'
 
 export async function POST(request: NextRequest) {
   try {
