@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAppKitAccount, useAppKitNetwork, useAppKit } from '@reown/appkit/react'
+import { useAppKitAccount, useAppKitNetwork, useAppKit, useAppKitProvider } from '@reown/appkit/react'
+import type { Provider } from '@reown/appkit-adapter-solana/react'
 import { useSession, signIn } from 'next-auth/react'
+import { useSignMessage } from 'wagmi'
 import Link from 'next/link'
 
 export default function RegisterPage() {
@@ -10,6 +12,8 @@ export default function RegisterPage() {
   const { caipNetwork } = useAppKitNetwork()
   const { open } = useAppKit()
   const { data: session } = useSession()
+  const { walletProvider: solanaWalletProvider } = useAppKitProvider<Provider>('solana')
+  const { signMessageAsync: signEvmMessage } = useSignMessage()
 
   const [slug, setSlug] = useState('')
   const [name, setName] = useState('')
@@ -22,6 +26,10 @@ export default function RegisterPage() {
   const [blinkUrl, setBlinkUrl] = useState('')
   const [solanaAddress, setSolanaAddress] = useState('')
   const [evmAddress, setEvmAddress] = useState('')
+  const [solanaSignature, setSolanaSignature] = useState('')
+  const [evmSignature, setEvmSignature] = useState('')
+  const [solanaVerificationMessage, setSolanaVerificationMessage] = useState('')
+  const [evmVerificationMessage, setEvmVerificationMessage] = useState('')
 
   // Determine connection type BEFORE using in useEffect
   const isEVMConnection = caipAddress?.startsWith('eip155:')
@@ -35,20 +43,68 @@ export default function RegisterPage() {
     }
   }, [session])
 
+  // Request Solana wallet signature
+  const requestSolanaSignature = async (walletAddress: string) => {
+    if (!solanaWalletProvider || solanaSignature) return
+
+    try {
+      const message = `Sign this message to verify your Solana wallet ownership for BlinkTip.\n\nWallet: ${walletAddress}\nTimestamp: ${Date.now()}`
+      setSolanaVerificationMessage(message)
+
+      const encodedMessage = new TextEncoder().encode(message)
+      const signature = await solanaWalletProvider.signMessage(encodedMessage)
+      const signatureBase64 = Buffer.from(signature).toString('base64')
+
+      setSolanaSignature(signatureBase64)
+      console.log('✓ Solana wallet signature obtained')
+    } catch (error) {
+      console.error('Failed to sign Solana message:', error)
+      setError('You must sign the message to verify Solana wallet ownership')
+    }
+  }
+
+  // Request EVM wallet signature
+  const requestEvmSignature = async (walletAddress: string) => {
+    if (!signEvmMessage || evmSignature) return
+
+    try {
+      const message = `Sign this message to verify your EVM wallet ownership for BlinkTip.\n\nWallet: ${walletAddress}\nTimestamp: ${Date.now()}`
+      setEvmVerificationMessage(message)
+
+      const signature = await signEvmMessage({ message })
+
+      setEvmSignature(signature)
+      console.log('✓ EVM wallet signature obtained')
+    } catch (error) {
+      console.error('Failed to sign EVM message:', error)
+      setError('You must sign the message to verify EVM wallet ownership')
+    }
+  }
+
   // Auto-detect BOTH Solana and EVM addresses from multi-chain wallet
   useEffect(() => {
     if (!isConnected) {
       setSolanaAddress('')
       setEvmAddress('')
+      setSolanaSignature('')
+      setEvmSignature('')
       return
     }
 
     const detectAddresses = async () => {
-      // Set current connected address first
+      // Set current connected address first and request signature
       if (isSolanaConnection && address) {
-        setSolanaAddress(address)
+        if (address !== solanaAddress) {
+          setSolanaAddress(address)
+          // Request Solana signature when address is set
+          requestSolanaSignature(address)
+        }
       } else if (isEVMConnection && address) {
-        setEvmAddress(address)
+        if (address !== evmAddress) {
+          setEvmAddress(address)
+          // Request EVM signature when address is set
+          requestEvmSignature(address)
+        }
       }
 
       // Try to detect the OTHER chain's address from the same wallet
@@ -57,9 +113,11 @@ export default function RegisterPage() {
         if (isSolanaConnection) {
           if (typeof window !== 'undefined' && (window as any).ethereum) {
             const accounts = await (window as any).ethereum.request({ method: 'eth_accounts' })
-            if (accounts && accounts[0]) {
+            if (accounts && accounts[0] && accounts[0] !== evmAddress) {
               setEvmAddress(accounts[0])
               console.log('[Register] Detected EVM address from multi-chain wallet:', accounts[0])
+              // Request EVM signature for the detected address
+              requestEvmSignature(accounts[0])
             }
           }
         }
@@ -70,8 +128,13 @@ export default function RegisterPage() {
             try {
               const resp = await (window as any).solana.connect({ onlyIfTrusted: true })
               if (resp && resp.publicKey) {
-                setSolanaAddress(resp.publicKey.toString())
-                console.log('[Register] Detected Solana address from multi-chain wallet:', resp.publicKey.toString())
+                const solAddr = resp.publicKey.toString()
+                if (solAddr !== solanaAddress) {
+                  setSolanaAddress(solAddr)
+                  console.log('[Register] Detected Solana address from multi-chain wallet:', solAddr)
+                  // Request Solana signature for the detected address
+                  requestSolanaSignature(solAddr)
+                }
               }
             } catch (e) {
               // Wallet might not support Solana or not trusted yet
@@ -102,6 +165,17 @@ export default function RegisterPage() {
       return
     }
 
+    // Validate that we have signatures for the addresses we're submitting
+    if (solanaAddress && !solanaSignature) {
+      setError('Please sign the message with your Solana wallet first')
+      return
+    }
+
+    if (evmAddress && !evmSignature) {
+      setError('Please sign the message with your EVM wallet first')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -127,7 +201,9 @@ export default function RegisterPage() {
       console.log('[Register] Submitting with addresses:', {
         solana: solanaAddress || 'none',
         evm: evmAddress || 'none',
-        supportedChains
+        supportedChains,
+        hasSolanaSignature: !!solanaSignature,
+        hasEvmSignature: !!evmSignature
       })
 
       const response = await fetch('/api/creators', {
@@ -135,8 +211,12 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug,
-          wallet_address: solanaAddress || undefined, // Database column is wallet_address (Solana)
+          wallet_address: solanaAddress || undefined,
+          wallet_signature: solanaSignature || undefined,
+          verification_message: solanaVerificationMessage || undefined,
           evm_wallet_address: evmAddress || undefined,
+          evm_wallet_signature: evmSignature || undefined,
+          evm_verification_message: evmVerificationMessage || undefined,
           name,
           bio: bio.trim() || undefined,
           avatar_url: avatarUrl.trim() || undefined,
