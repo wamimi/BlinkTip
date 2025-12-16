@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
       twitter_name,
       twitter_avatar_url,
       twitter_follower_count,
-      twitter_created_at
+      twitter_created_at,
+      wallet_signature,
+      evm_wallet_signature,
+      verification_message,
     } = body
 
     // Validate required fields
