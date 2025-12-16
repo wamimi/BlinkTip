@@ -3,7 +3,7 @@
  *
  * Implements autonomous agent tipping via x402 protocol with proper Solana transaction structure.
  *
- * REQUIRED INSTRUCTIONS (per PayAI team):
+ * REQUIRED INSTRUCTIONS
  * 1. ComputeBudgetProgram.setComputeUnitLimit (up to 7000)
  * 2. ComputeBudgetProgram.setComputeUnitPrice (< 5 lamports)
  * 3. createTransferCheckedInstruction (SPL token transfer)
@@ -132,7 +132,7 @@ export async function tipCreatorViaX402(
     // Use maxAmountRequired from payment requirements
     const tokenAmount = BigInt(paymentRequirements.maxAmountRequired);
 
-    // Check if recipient token account exists, create if not (BEFORE x402 transaction)
+    // Check if recipient token account exists, create if not before x402 transaction
     const toAccountInfo = await connection.getAccountInfo(toTokenAccount);
     if (!toAccountInfo) {
       console.log("[x402 Tipper] Creating token account for recipient first...");
@@ -188,7 +188,7 @@ export async function tipCreatorViaX402(
       })
     );
 
-    // 3. TransferChecked instruction (SPL token transfer with decimals)
+    // 3. TransferChecked instruction ie SPL token transfer with decimals)
     instructions.push(
       createTransferCheckedInstruction(
         fromTokenAccount,
