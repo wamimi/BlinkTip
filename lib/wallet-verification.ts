@@ -47,3 +47,31 @@ export async function verifySolanaSignature(
     }
   }
 }
+
+/**
+ * Verify EVM wallet ownership via signature
+ */
+export async function verifyEVMSignature(
+  walletAddress: string,
+  signature: string,
+  message: string
+): Promise<VerificationResult> {
+  try {
+    const isValid = await verifyMessage({
+      address: walletAddress as `0x${string}`,
+      message,
+      signature: signature as `0x${string}`,
+    })
+
+    if (!isValid) {
+      return { valid: false, error: 'Invalid signature' }
+    }
+
+    return { valid: true }
+  } catch (error) {
+    return {
+      valid: false,
+      error: error instanceof Error ? error.message : 'Verification failed',
+    }
+  }
+}
