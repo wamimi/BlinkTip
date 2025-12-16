@@ -20,7 +20,7 @@ const celoSepolia = defineChain({
 })
 
 export default function RegisterPage() {
-  const { publicKey } = useWallet()
+  const { publicKey, signMessage } = useWallet()
   const { data: session, status } = useSession()
   const celoAccount = useActiveAccount()
 
@@ -34,6 +34,10 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false)
   const [tipLink, setTipLink] = useState('')
   const [blinkUrl, setBlinkUrl] = useState('')
+  const [solanaSignature, setSolanaSignature] = useState('')
+  const [evmSignature, setEvmSignature] = useState('')
+  const [solanaVerificationMessage, setSolanaVerificationMessage] = useState('')
+  const [evmVerificationMessage, setEvmVerificationMessage] = useState('')
 
   // Auto-fill Celo wallet address when connected
   useEffect(() => {
@@ -56,6 +60,61 @@ export default function RegisterPage() {
       }
     }
   }, [session])
+
+  // Prompt for Solana wallet signature when wallet connects
+  useEffect(() => {
+    if (publicKey && signMessage && !solanaSignature) {
+      const requestSolanaSignature = async () => {
+        try {
+          const message = `Sign this message to verify your Solana wallet ownership for BlinkTip.\n\nWallet: ${publicKey.toBase58()}\nTimestamp: ${Date.now()}`
+          setSolanaVerificationMessage(message)
+
+          const messageBytes = new TextEncoder().encode(message)
+          const signature = await signMessage(messageBytes)
+          const signatureBase64 = Buffer.from(signature).toString('base64')
+
+          setSolanaSignature(signatureBase64)
+          console.log('✓ Solana wallet signature obtained')
+        } catch (error) {
+          console.error('Failed to sign Solana message:', error)
+          setError('You must sign the message to verify wallet ownership')
+        }
+      }
+
+      requestSolanaSignature()
+    }
+  }, [publicKey, signMessage, solanaSignature])
+
+  // Prompt for EVM wallet signature when wallet connects
+  useEffect(() => {
+    if (celoAccount?.address && !evmSignature) {
+      const requestEvmSignature = async () => {
+        try {
+          const message = `Sign this message to verify your EVM wallet ownership for BlinkTip.\n\nWallet: ${celoAccount.address}\nTimestamp: ${Date.now()}`
+          setEvmVerificationMessage(message)
+
+          const ethereum = (window as any).ethereum
+          if (!ethereum) {
+            console.error('No EVM provider found')
+            return
+          }
+
+          const signature = await ethereum.request({
+            method: 'personal_sign',
+            params: [message, celoAccount.address],
+          })
+
+          setEvmSignature(signature)
+          console.log('✓ EVM wallet signature obtained')
+        } catch (error) {
+          console.error('Failed to sign EVM message:', error)
+          setError('You must sign the message to verify EVM wallet ownership')
+        }
+      }
+
+      requestEvmSignature()
+    }
+  }, [celoAccount, evmSignature])
 
   const validateSlug = (value: string) => {
     const slugRegex = /^[a-z0-9_-]{3,50}$/
@@ -100,10 +159,14 @@ export default function RegisterPage() {
         body: JSON.stringify({
           slug,
           wallet_address: publicKey.toBase58(),
+          wallet_signature: solanaSignature,
+          verification_message: solanaVerificationMessage,
           name,
           bio: bio.trim() || undefined,
           avatar_url: avatarUrl.trim() || undefined,
-          celo_wallet_address: celoWalletAddress.trim() || undefined,
+          evm_wallet_address: celoWalletAddress.trim() || undefined,
+          evm_wallet_signature: evmSignature || undefined,
+          evm_verification_message: evmVerificationMessage || undefined,
           supported_chains: celoWalletAddress.trim() ? ['solana', 'celo'] : ['solana'],
           twitter_id: session.user.twitterId,
           twitter_handle: session.user.twitterHandle,
