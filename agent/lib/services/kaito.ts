@@ -78,7 +78,7 @@ export async function getYapsScore(
 }
 
 /**
- * Analyze Yaps score and determine tip priority
+ * Analyze Yaps score and determine tip priority and recommendation
  *
  * @param score - Yaps score data
  * @returns Analysis with trend and recommendation
