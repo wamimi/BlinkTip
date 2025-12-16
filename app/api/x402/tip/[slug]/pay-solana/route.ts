@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { X402PaymentHandler } from 'x402-solana/server'
 import { supabase } from '@/lib/supabase'
+import { validateTipAmount } from '@/lib/validation'
+import { rateLimit } from '@/lib/rate-limit'
 
 // Token mint addresses (MUST match what client expects!)
 const TOKENS = {
@@ -22,6 +24,20 @@ export async function GET(
   const { slug } = await params
 
   try {
+    // Rate limiting: 20 payment requests per minute per IP
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit(`x402_solana:${ip}`, {
+      limit: 20,
+      windowInSeconds: 60,
+    })
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many payment requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     // Fetch creator info
     const { data: creator, error } = await supabase
       .from('creators')
@@ -68,13 +84,14 @@ export async function GET(
     const contentUrl = url.searchParams.get('content_url')
 
     // Validate amount
-    const amountNum = parseFloat(amount)
-    if (isNaN(amountNum) || amountNum <= 0) {
+    const validation = validateTipAmount(amount)
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Invalid amount' },
+        { error: validation.error },
         { status: 400 }
       )
     }
+    const amountNum = validation.value!
 
     const tokenMint = TOKENS[token]
     const amountInMicroUsdc = Math.floor(amountNum * 1_000_000).toString()

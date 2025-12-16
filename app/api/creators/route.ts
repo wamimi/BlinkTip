@@ -1,8 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { rateLimit } from '@/lib/rate-limit'
+import { verifySolanaSignature, verifyEVMSignature } from '@/lib/wallet-verification'
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.twitterId) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Twitter authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Rate limiting: 5 creator registrations per hour per user
+    const rateLimitResult = await rateLimit(`creator_reg:${session.user.twitterId}`, {
+      limit: 5,
+      windowInSeconds: 3600,
+    })
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many creator registration attempts. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const {
       slug,
@@ -17,7 +43,10 @@ export async function POST(request: NextRequest) {
       twitter_name,
       twitter_avatar_url,
       twitter_follower_count,
-      twitter_created_at
+      twitter_created_at,
+      wallet_signature,
+      evm_wallet_signature,
+      verification_message,
     } = body
 
     // Validate required fields
@@ -34,6 +63,52 @@ export async function POST(request: NextRequest) {
         { error: 'At least one wallet address (Solana or EVM) is required' },
         { status: 400 }
       )
+    }
+
+    // Verify Solana wallet ownership if provided
+    if (wallet_address) {
+      if (!wallet_signature || !verification_message) {
+        return NextResponse.json(
+          { error: 'Solana wallet signature and verification message required' },
+          { status: 400 }
+        )
+      }
+
+      const solanaVerification = await verifySolanaSignature(
+        wallet_address,
+        wallet_signature,
+        verification_message
+      )
+
+      if (!solanaVerification.valid) {
+        return NextResponse.json(
+          { error: `Solana wallet verification failed: ${solanaVerification.error}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Verify EVM wallet ownership if provided
+    if (evm_wallet_address) {
+      if (!evm_wallet_signature || !verification_message) {
+        return NextResponse.json(
+          { error: 'EVM wallet signature and verification message required' },
+          { status: 400 }
+        )
+      }
+
+      const evmVerification = await verifyEVMSignature(
+        evm_wallet_address,
+        evm_wallet_signature,
+        verification_message
+      )
+
+      if (!evmVerification.valid) {
+        return NextResponse.json(
+          { error: `EVM wallet verification failed: ${evmVerification.error}` },
+          { status: 400 }
+        )
+      }
     }
 
     // Validate slug format

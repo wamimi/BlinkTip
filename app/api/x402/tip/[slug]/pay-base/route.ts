@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { useFacilitator } from 'x402/verify'
 import { supabase } from '@/lib/supabase'
 import { getAddress } from 'viem'
+import { validateTipAmount } from '@/lib/validation'
+import { rateLimit } from '@/lib/rate-limit'
 
 // Testnet facilitator URL
 const TESTNET_FACILITATOR_URL = 'https://x402.org/facilitator'
@@ -20,6 +22,20 @@ export async function GET(
   const { slug } = await params
 
   try {
+    // Rate limiting: 20 payment requests per minute per IP
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit(`x402_base:${ip}`, {
+      limit: 20,
+      windowInSeconds: 60,
+    })
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many payment requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     // Fetch creator info
     const { data: creator, error } = await supabase
       .from('creators')
@@ -54,13 +70,14 @@ export async function GET(
     const contentUrl = url.searchParams.get('content_url')
 
     // Validate amount
-    const amountNum = parseFloat(amount)
-    if (isNaN(amountNum) || amountNum <= 0) {
+    const validation = validateTipAmount(amount)
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Invalid amount' },
+        { error: validation.error },
         { status: 400 }
       )
     }
+    const amountNum = validation.value!
 
     // Determine network
     const network = (process.env.NEXT_PUBLIC_BASE_NETWORK || 'base-sepolia') as 'base' | 'base-sepolia'

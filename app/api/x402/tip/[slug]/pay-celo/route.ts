@@ -13,6 +13,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createThirdwebClient, defineChain } from "thirdweb";
 import { settlePayment, facilitator } from "thirdweb/x402";
 import { supabase } from "@/lib/supabase";
+import { validateTipAmount } from "@/lib/validation";
+import { rateLimit } from "@/lib/rate-limit";
 
 // Environment configuration
 const THIRDWEB_SECRET_KEY = process.env.THIRDWEB_SECRET_KEY!;
@@ -53,9 +55,23 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    // Rate limiting: 20 payment requests per minute per IP
+    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+    const rateLimitResult = await rateLimit(`x402_celo:${ip}`, {
+      limit: 20,
+      windowInSeconds: 60,
+    })
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many payment requests. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     const { slug } = await params;
     const { searchParams } = new URL(request.url);
-    const amount = parseFloat(searchParams.get("amount") || "0");
+    const amountParam = searchParams.get("amount") || "0";
     const token = searchParams.get("token") || "USDC";
     const agentId = searchParams.get("agent_id");
     const contentUrl = searchParams.get("content_url");
@@ -64,12 +80,14 @@ export async function GET(
     const paymentHeader = request.headers.get("x-payment");
 
     // Validate amount
-    if (!amount || amount <= 0) {
+    const validation = validateTipAmount(amountParam);
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: "Invalid amount" },
+        { error: validation.error },
         { status: 400 }
       );
     }
+    const amount = validation.value!
 
     // Validate token
     if (!["USDC", "cUSD"].includes(token)) {

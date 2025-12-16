@@ -29,10 +29,10 @@ const cdp = new CdpClient();
 const SOLANA_RPC_URL = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 const connection = new Connection(SOLANA_RPC_URL, "confirmed");
 
-// USDC Mint on Solana Devnet 
+// USDC Mint on Solana Devnet
 const USDC_MINT = new PublicKey(
-  "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr" // USDC-Dev from spl-token-faucet.com
-);
+  "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"
+)
 
 export interface AgentWalletInfo {
   address: string;
@@ -235,7 +235,7 @@ export async function sendUSDCTip(
 }
 
 /**
- * Request SOL from devnet faucet (for gas fees)
+ * Request SOL from devnet faucet
  */
 export async function requestDevnetSOL(): Promise<boolean> {
   try {
