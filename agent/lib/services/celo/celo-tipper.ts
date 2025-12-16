@@ -88,6 +88,7 @@ export async function tipCreatorViaCeloX402(
     
 
     // Use thirdweb's transaction API
+    
     const result = await tipViaThirdwebAPI(
       x402Endpoint,
       creator,
@@ -284,3 +285,4 @@ export async function getCeloTippingStatus(): Promise<{
     };
   }
 }
+
