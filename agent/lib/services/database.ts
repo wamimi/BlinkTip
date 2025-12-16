@@ -6,7 +6,8 @@
  * - Checking if creator was recently tipped
  * - Logging agent decisions (TIP/SKIP)
  * - Recording tips to database
- */
+ 
+*/
 
 import { supabase } from "@/lib/supabase";
 
