@@ -2,7 +2,6 @@
  * CDP Direct Tipping Service for Agent
  *
  * This service handles direct USDC transfers from the agent's CDP wallet to creators.
- * This is the working, production-ready tipping method for the autonomous agent.
  */
 
 import { getOrCreateAgentWallet, sendUSDCTip } from "./cdp-wallet";
