@@ -9,9 +9,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Empty turbopack config to silence the error
-  // Reown AppKit works fine with Turbopack without additional config
+  // Empty turbopack config to acknowledge we're using Turbopack
   turbopack: {},
+
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding')
     return config

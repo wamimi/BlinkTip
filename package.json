@@ -45,7 +45,7 @@
     "@upstash/redis": "^1.35.8",
     "@vercel/kv": "^3.0.0",
     "@wagmi/core": "^3.0.0",
-    "next": "16.0.0",
+    "next": "16.0.10",
     "next-auth": "^4.24.13",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -66,6 +66,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.0.0",
+    "ignore-loader": "^0.1.2",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"
