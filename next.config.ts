@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next'
 import webpack from 'webpack'
+import path from 'path'
 
 const nextConfig: NextConfig = {
   images: {
@@ -10,6 +11,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Externalize server-only packages
+  serverExternalPackages: ['pino', 'thread-stream', 'pino-pretty'],
   // Configure Turbopack to handle server-only modules
   turbopack: {
     resolveAlias: {
@@ -43,6 +46,12 @@ const nextConfig: NextConfig = {
         net: false,
         tls: false,
         crypto: false,
+        stream: false,
+        util: false,
+        url: false,
+        http: false,
+        https: false,
+        zlib: false,
       }
 
       // Replace server-only modules with empty stubs for client builds
@@ -52,14 +61,24 @@ const nextConfig: NextConfig = {
         'pino': stubPath,
         'thread-stream': stubPath,
         'pino-pretty': stubPath,
+        // Also handle nested imports
+        'pino/file': stubPath,
+        'pino/stream': stubPath,
       }
 
-      // Also use IgnorePlugin as a fallback for any remaining imports
+      // Use NormalModuleReplacementPlugin for more reliable replacement
       config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^pino$/, stubPath),
+        new webpack.NormalModuleReplacementPlugin(/^thread-stream$/, stubPath),
+        new webpack.NormalModuleReplacementPlugin(/^pino-pretty$/, stubPath),
+        // Also use IgnorePlugin as a fallback
         new webpack.IgnorePlugin({
           checkResource(resource: string) {
-            // Match pino and thread-stream imports
-            return /[\\/](pino|thread-stream|pino-pretty)([\\/]|$)/.test(resource)
+            // Match pino and thread-stream imports from node_modules
+            if (/[\\/]node_modules[\\/].*(pino|thread-stream|pino-pretty)([\\/]|$)/.test(resource)) {
+              return true
+            }
+            return false
           },
         })
       )
