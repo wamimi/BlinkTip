@@ -71,5 +71,28 @@
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"
+  },
+  "browser": {
+    "pino": false,
+    "thread-stream": false,
+    "pino-pretty": false,
+    "@walletconnect/logger": false
+  },
+  "pnpm": {
+    "packageExtensions": {
+      "thread-stream@0.15.2": {
+        "peerDependenciesMeta": {
+          "tape": {
+            "optional": true
+          },
+          "tap": {
+            "optional": true
+          },
+          "why-is-node-running": {
+            "optional": true
+          }
+        }
+      }
+    }
   }
 }
