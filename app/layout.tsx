@@ -6,6 +6,7 @@ import { ThirdwebProvider } from './providers/ThirdwebProvider'
 import { AuthProvider } from './providers'
 import { ClientReownProvider } from '@/components/ClientReownProvider'
 import { headers } from 'next/headers'
+import ClientGlobals from '@/lib/client'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,6 +37,7 @@ export default async function RootLayout({
         <ClientReownProvider cookies={cookies}>
           <AuthProvider>
             <ThirdwebProvider>
+              <ClientGlobals />
               <SolanaWalletProvider>{children}</SolanaWalletProvider>
             </ThirdwebProvider>
           </AuthProvider>

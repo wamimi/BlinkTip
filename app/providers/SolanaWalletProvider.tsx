@@ -14,7 +14,6 @@ import {
 } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
 import { useMemo } from 'react'
-import '@solana/wallet-adapter-react-ui/styles.css'
 
 export function SolanaWalletProvider({
   children,
