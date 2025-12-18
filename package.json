@@ -29,6 +29,7 @@
     "@coinbase/x402": "^0.7.3",
     "@langchain/core": "^1.0.4",
     "@langchain/openai": "^1.1.0",
+    "@lit/react": "^1.0.8",
     "@reown/appkit": "^1.8.14",
     "@reown/appkit-adapter-solana": "^1.8.14",
     "@reown/appkit-adapter-wagmi": "^1.8.14",

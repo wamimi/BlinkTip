@@ -22,6 +22,9 @@ importers:
       '@langchain/openai':
         specifier: ^1.1.0
         version: 1.1.0(@langchain/core@1.0.4(openai@6.8.1(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.12)))(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      '@lit/react':
+        specifier: ^1.0.8
+        version: 1.0.8(@types/react@19.2.2)
       '@reown/appkit':
         specifier: ^1.8.14
         version: 1.8.14(@react-native-async-storage/async-storage@1.24.0(react-native@0.82.1(@babel/core@7.28.5)(@types/react@19.2.2)(bufferutil@4.0.9)(react@19.2.0)(utf-8-validate@5.0.10)))(@types/react@19.2.2)(@upstash/redis@1.35.8)(@vercel/kv@3.0.0)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(react@19.2.0)(typescript@5.9.3)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@5.0.10)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.12)
@@ -8958,7 +8961,6 @@ snapshots:
   '@lit/react@1.0.8(@types/react@19.2.2)':
     dependencies:
       '@types/react': 19.2.2
-    optional: true
 
   '@lit/reactive-element@2.1.1':
     dependencies:
