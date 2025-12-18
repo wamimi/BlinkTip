@@ -51,12 +51,12 @@ export const authOptions: NextAuthOptions = {
       if (url.startsWith(baseUrl)) {
         return url
       }
-      return `${baseUrl}/register`
+      return `${baseUrl}/register-new`
     },
   },
   pages: {
-    signIn: '/register',
-    error: '/register',
+    signIn: '/register-new',
+    error: '/register-new',
   },
 }
 
