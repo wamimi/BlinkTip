@@ -1,3 +1,6 @@
+// Client-only configuration - prevents server-side evaluation
+'use client'
+
 import { cookieStorage, createStorage } from '@wagmi/core'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { SolanaAdapter } from '@reown/appkit-adapter-solana/react'
