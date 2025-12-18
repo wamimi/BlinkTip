@@ -1,6 +1,5 @@
 import type { NextConfig } from 'next'
 import webpack from 'webpack'
-import path from 'path'
 
 const nextConfig: NextConfig = {
   images: {
@@ -12,14 +11,18 @@ const nextConfig: NextConfig = {
     ],
   },
   // Externalize server-only packages
-  serverExternalPackages: ['pino', 'thread-stream', 'pino-pretty'],
+  serverExternalPackages: ['pino', 'thread-stream', 'pino-pretty', '@walletconnect/logger'],
   // Configure Turbopack to handle server-only modules
   turbopack: {
     resolveAlias: {
-      // Stub out server-only modules for client builds
-      'pino': './lib/webpack-stubs.js',
-      'thread-stream': './lib/webpack-stubs.js',
-      'pino-pretty': './lib/webpack-stubs.js',
+      // Stub out server-only modules for client builds - use @ alias
+      'pino': '@/lib/empty-module.js',
+      'thread-stream': '@/lib/empty-module.js',
+      'pino-pretty': '@/lib/empty-module.js',
+      '@walletconnect/logger': '@/lib/empty-module.js',
+      // Also stub the nested imports
+      'pino/file': '@/lib/empty-module.js',
+      'pino/stream': '@/lib/empty-module.js',
     },
     resolveExtensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
   },
