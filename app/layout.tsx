@@ -4,7 +4,7 @@ import './globals.css'
 import { SolanaWalletProvider } from './providers/SolanaWalletProvider'
 import { ThirdwebProvider } from './providers/ThirdwebProvider'
 import { AuthProvider } from './providers'
-import { ReownProvider } from '@/context/reown'
+import { ClientReownProvider } from '@/components/ClientReownProvider'
 import { headers } from 'next/headers'
 
 const geistSans = Geist({
@@ -33,13 +33,13 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ReownProvider cookies={cookies}>
+        <ClientReownProvider cookies={cookies}>
           <AuthProvider>
             <ThirdwebProvider>
               <SolanaWalletProvider>{children}</SolanaWalletProvider>
             </ThirdwebProvider>
           </AuthProvider>
-        </ReownProvider>
+        </ClientReownProvider>
       </body>
     </html>
   )
