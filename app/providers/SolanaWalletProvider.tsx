@@ -13,6 +13,7 @@ import {
   TrustWalletAdapter,
 } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
+// import '@solana/wallet-adapter-react-ui/styles.css'
 import { useMemo } from 'react'
 
 export function SolanaWalletProvider({
