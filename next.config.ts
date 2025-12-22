@@ -43,6 +43,11 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // Include native modules for deployment (fixes lightningcss native bindings)
+  outputFileTracingIncludes: {
+    '/': ['./node_modules/**/*.node'],
+  },
+
   webpack: (config, { isServer }) => {
     // Exclude server-only modules from client bundles
     if (!isServer) {
