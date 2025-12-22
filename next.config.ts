@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: false,
   },
+  
+  // Tell Vercel to use ONLY linux binaries
+  output: 'standalone',
+  
   images: {
     remotePatterns: [
       {
@@ -14,22 +18,22 @@ const nextConfig: NextConfig = {
     ],
   },
   
-  // Externalize server-only packages
+  // Externalize heavy server packages
   serverExternalPackages: [
     'pino', 
     'thread-stream', 
     'pino-pretty', 
     '@walletconnect/logger',
-    // Add heavy crypto/blockchain packages
     '@solana/web3.js',
     '@solana/spl-token',
+    '@solana/wallet-adapter-base',
+    '@solana/wallet-adapter-wallets',
     '@coinbase/cdp-sdk',
     'thirdweb',
     '@langchain/core',
     '@langchain/openai',
   ],
   
-  // Configure Turbopack to handle server-only modules
   turbopack: {
     resolveAlias: {
       'pino': '@/lib/empty-module.js',
@@ -42,22 +46,26 @@ const nextConfig: NextConfig = {
     resolveExtensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
   },
 
-  // Aggressively exclude large dependencies from function bundles
+  // NUCLEAR EXCLUSIONS - exclude ALL platform-specific and heavy deps
   outputFileTracingExcludes: {
     '*': [
-      // Build tools
-      'node_modules/@swc/core-linux-x64-gnu',
-      'node_modules/@swc/core-linux-x64-musl',
-      'node_modules/@esbuild/linux-x64',
-      '**/node_modules/**/test/**',
-      '**/node_modules/**/*.test.js',
-      '**/node_modules/**/*.test.ts',
-      '**/node_modules/**/*.test.mjs',
+      // Mac-specific binaries (CRITICAL - these are causing bloat!)
+      'node_modules/@next/swc-darwin-arm64/**',
+      'node_modules/@img/sharp-libvips-darwin-arm64/**',
+      'node_modules/lightningcss-darwin-arm64/**',
+      'node_modules/@tailwindcss/oxide-darwin-arm64/**',
+      'node_modules/@unrs/resolver-binding-darwin-arm64/**',
+      'node_modules/**/*-darwin-arm64*/**',
+      'node_modules/**/*-darwin-x64*/**',
       
-      // Large blockchain SDKs (exclude from functions that don't need them)
-      'node_modules/@solana/web3.js',
-      'node_modules/@solana/spl-token',
-      'node_modules/@solana/wallet-adapter-*/**',
+      // Build tools
+      'node_modules/@swc/**',
+      'node_modules/@esbuild/**',
+      'node_modules/**/test/**',
+      'node_modules/**/*.test.*',
+      
+      // ALL Solana packages (we'll include only for specific routes)
+      'node_modules/@solana/**',
       'node_modules/@coinbase/**',
       'node_modules/thirdweb/**',
       'node_modules/@thirdweb-dev/**',
@@ -65,30 +73,32 @@ const nextConfig: NextConfig = {
       'node_modules/@walletconnect/**',
       'node_modules/@langchain/**',
       'node_modules/langchain/**',
+      'node_modules/@radix-ui/**',
+      'node_modules/react-modal/**',
+      'node_modules/@trezor/**',
+      'node_modules/usb/**',
       
       // Unnecessary files
       'node_modules/**/*.md',
       'node_modules/**/*.d.ts',
       'node_modules/**/*.map',
-      'node_modules/**/LICENSE',
-      'node_modules/**/README',
-      'node_modules/**/.github',
+      'node_modules/**/LICENSE*',
+      'node_modules/**/README*',
+      'node_modules/**/.github/**',
       'node_modules/**/docs/**',
       'node_modules/**/examples/**',
     ],
-    // Only include necessary deps for specific API routes
-    '/api/actions/**': [],  // Solana Actions - needs Solana deps
-    '/api/x402/**': [],     // X402 protocol - needs CDP/Solana deps
-    '/api/agent/**': [],    // AI agent - needs LangChain deps
   },
 
-  // Include native modules for deployment
+  // Include native modules but ONLY Linux ones
   outputFileTracingIncludes: {
-    '/': ['./node_modules/**/*.node'],
+    '/': [
+      'node_modules/**/*-linux-*.node',
+      'node_modules/**/binding/linux-*.node',
+    ],
   },
 
   webpack: (config, { isServer }) => {
-    // Exclude server-only modules from client bundles
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -128,18 +138,21 @@ const nextConfig: NextConfig = {
         })
       )
     } else {
-      // For server builds, externalize heavy packages
+      // Externalize EVERYTHING heavy on server side
       config.externals.push(
         'pino-pretty', 
         'lokijs', 
         'encoding',
         '@solana/web3.js',
         '@solana/spl-token',
-        'thirdweb'
+        '@solana/wallet-adapter-base',
+        '@coinbase/cdp-sdk',
+        'thirdweb',
+        '@langchain/core',
+        '@langchain/openai'
       )
     }
 
-    // Ignore all files in test directories
     config.module.rules.push({
       test: /[\\/]node_modules[\\/].*[\\/]test[\\/]/,
       use: 'null-loader',
