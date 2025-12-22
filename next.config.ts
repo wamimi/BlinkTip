@@ -13,26 +13,39 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  
   // Externalize server-only packages
-  serverExternalPackages: ['pino', 'thread-stream', 'pino-pretty', '@walletconnect/logger'],
+  serverExternalPackages: [
+    'pino', 
+    'thread-stream', 
+    'pino-pretty', 
+    '@walletconnect/logger',
+    // Add heavy crypto/blockchain packages
+    '@solana/web3.js',
+    '@solana/spl-token',
+    '@coinbase/cdp-sdk',
+    'thirdweb',
+    '@langchain/core',
+    '@langchain/openai',
+  ],
+  
   // Configure Turbopack to handle server-only modules
   turbopack: {
     resolveAlias: {
-      // Stub out server-only modules for client builds - use @ alias
       'pino': '@/lib/empty-module.js',
       'thread-stream': '@/lib/empty-module.js',
       'pino-pretty': '@/lib/empty-module.js',
       '@walletconnect/logger': '@/lib/empty-module.js',
-      // Also stub the nested imports
       'pino/file': '@/lib/empty-module.js',
       'pino/stream': '@/lib/empty-module.js',
     },
     resolveExtensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
   },
 
-  // Exclude problematic test files from output
+  // Aggressively exclude large dependencies from function bundles
   outputFileTracingExcludes: {
     '*': [
+      // Build tools
       'node_modules/@swc/core-linux-x64-gnu',
       'node_modules/@swc/core-linux-x64-musl',
       'node_modules/@esbuild/linux-x64',
@@ -40,10 +53,36 @@ const nextConfig: NextConfig = {
       '**/node_modules/**/*.test.js',
       '**/node_modules/**/*.test.ts',
       '**/node_modules/**/*.test.mjs',
+      
+      // Large blockchain SDKs (exclude from functions that don't need them)
+      'node_modules/@solana/web3.js',
+      'node_modules/@solana/spl-token',
+      'node_modules/@solana/wallet-adapter-*/**',
+      'node_modules/@coinbase/**',
+      'node_modules/thirdweb/**',
+      'node_modules/@thirdweb-dev/**',
+      'node_modules/@reown/**',
+      'node_modules/@walletconnect/**',
+      'node_modules/@langchain/**',
+      'node_modules/langchain/**',
+      
+      // Unnecessary files
+      'node_modules/**/*.md',
+      'node_modules/**/*.d.ts',
+      'node_modules/**/*.map',
+      'node_modules/**/LICENSE',
+      'node_modules/**/README',
+      'node_modules/**/.github',
+      'node_modules/**/docs/**',
+      'node_modules/**/examples/**',
     ],
+    // Only include necessary deps for specific API routes
+    '/api/actions/**': [],  // Solana Actions - needs Solana deps
+    '/api/x402/**': [],     // X402 protocol - needs CDP/Solana deps
+    '/api/agent/**': [],    // AI agent - needs LangChain deps
   },
 
-  // Include native modules for deployment (fixes lightningcss native bindings)
+  // Include native modules for deployment
   outputFileTracingIncludes: {
     '/': ['./node_modules/**/*.node'],
   },
@@ -65,27 +104,22 @@ const nextConfig: NextConfig = {
         zlib: false,
       }
 
-      // Replace server-only modules with empty stubs for client builds
       const stubPath = require.resolve('./lib/webpack-stubs.js')
       config.resolve.alias = {
         ...config.resolve.alias,
         'pino': stubPath,
         'thread-stream': stubPath,
         'pino-pretty': stubPath,
-        // Also handle nested imports
         'pino/file': stubPath,
         'pino/stream': stubPath,
       }
 
-      // Use NormalModuleReplacementPlugin for more reliable replacement
       config.plugins.push(
         new webpack.NormalModuleReplacementPlugin(/^pino$/, stubPath),
         new webpack.NormalModuleReplacementPlugin(/^thread-stream$/, stubPath),
         new webpack.NormalModuleReplacementPlugin(/^pino-pretty$/, stubPath),
-        // Also use IgnorePlugin as a fallback
         new webpack.IgnorePlugin({
           checkResource(resource: string) {
-            // Match pino and thread-stream imports from node_modules
             if (/[\\/]node_modules[\\/].*(pino|thread-stream|pino-pretty)([\\/]|$)/.test(resource)) {
               return true
             }
@@ -94,8 +128,15 @@ const nextConfig: NextConfig = {
         })
       )
     } else {
-      // For server builds, just externalize the usual suspects
-      config.externals.push('pino-pretty', 'lokijs', 'encoding')
+      // For server builds, externalize heavy packages
+      config.externals.push(
+        'pino-pretty', 
+        'lokijs', 
+        'encoding',
+        '@solana/web3.js',
+        '@solana/spl-token',
+        'thirdweb'
+      )
     }
 
     // Ignore all files in test directories
