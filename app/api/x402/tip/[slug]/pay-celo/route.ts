@@ -3,10 +3,6 @@
  *
  * Handles tipping on Celo blockchain using thirdweb's x402 protocol.
  * Supports USDC and cUSD stablecoins on Celo Sepolia testnet.
- *
- * Flow:
- * 1. GET: Returns 402 Payment Required with payment requirements
- * 2. POST: Verifies payment and settles on-chain via thirdweb facilitator
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -22,10 +18,9 @@ const THIRDWEB_SERVER_WALLET = process.env.THIRDWEB_SERVER_WALLET_ADDRESS!;
 const CELO_CHAIN_ID = parseInt(process.env.CELO_CHAIN_ID || "11142220");
 const CELO_RPC_URL = process.env.CELO_RPC_URL!;
 
-// Token addresses on Celo Sepolia
-const CELO_USDC_TOKEN = process.env.CELO_USDC_TOKEN!; // 6 decimals
-const CELO_USDC_ADAPTER = process.env.CELO_USDC_ADAPTER!; // For gas fee calculation
-const CELO_CUSD_ADDRESS = process.env.CELO_CUSD_ADDRESS!; // 18 decimals
+const CELO_USDC_TOKEN = process.env.CELO_USDC_TOKEN!;
+const CELO_USDC_ADAPTER = process.env.CELO_USDC_ADAPTER!;
+const CELO_CUSD_ADDRESS = process.env.CELO_CUSD_ADDRESS!;
 
 // Initialize thirdweb client
 const client = createThirdwebClient({
@@ -42,7 +37,7 @@ const celoSepolia = defineChain({
 const thirdwebFacilitator = facilitator({
   client,
   serverWalletAddress: THIRDWEB_SERVER_WALLET,
-  waitUntil: "confirmed", // Wait for on-chain confirmation
+  waitUntil: "confirmed",
 });
 
 /**
@@ -76,7 +71,6 @@ export async function GET(
     const agentId = searchParams.get("agent_id");
     const contentUrl = searchParams.get("content_url");
 
-    // Check for x-payment header first (if present, this is a retry with payment)
     const paymentHeader = request.headers.get("x-payment");
 
     // Validate amount
@@ -144,7 +138,6 @@ export async function GET(
     const resourceUrl = `${request.nextUrl.origin}${request.nextUrl.pathname}${request.nextUrl.search}`;
 
     if (paymentHeader) {
-      // Process payment - X-PAYMENT header is present
       console.log("[Celo x402] Received payment header, settling payment...");
       console.log(`  Amount: ${amount} ${token}`);
       console.log(`  Creator: ${creator.slug} (${creator.celo_wallet_address})`);
@@ -231,7 +224,6 @@ export async function GET(
         }
       );
     } else {
-      // No payment header - return 402 with payment requirements
       console.log("[Celo x402] No payment header, returning 402 payment requirements");
       console.log(`  Creator wallet (payTo): ${creator.celo_wallet_address}`);
       console.log(`  Server wallet (facilitator): ${THIRDWEB_SERVER_WALLET}`);
@@ -397,21 +389,16 @@ export async function POST(
 
     console.log("[Celo x402] ✓ Payment settled successfully");
 
-    // Extract transaction hash from response
-    // thirdweb's settlePayment returns paymentReceipt with transaction
     const transactionHash = result.paymentReceipt?.transaction || "unknown";
 
     console.log(`[Celo x402] Transaction hash: ${transactionHash}`);
 
-    // Determine tip source and sender address
     const isAgentTip = !!agentId;
     const source = isAgentTip ? "agent" : "human";
 
-    // For agent tips, use server wallet address
-    // For human tips, extract from payment data (would need to decode)
     const fromAddress = isAgentTip
       ? THIRDWEB_SERVER_WALLET
-      : "human-wallet-address"; // TODO: Extract from paymentData
+      : "human-wallet-address";
 
     // Record tip in database
     const { data: tip, error: tipError } = await supabase
@@ -423,7 +410,7 @@ export async function POST(
         token: token,
         signature: transactionHash,
         source: source,
-        status: "confirmed", // thirdweb waits for confirmation
+        status: "confirmed",
         chain: "celo",
         network: "celo-sepolia",
         is_agent_tip: isAgentTip,
@@ -440,11 +427,9 @@ export async function POST(
 
     if (tipError) {
       console.error("[Celo x402] Failed to record tip:", tipError);
-      // Don't fail the request - payment already went through
     } else {
       console.log(`[Celo x402] ✓ Tip recorded in database (ID: ${tip.id})`);
 
-      // If agent tip, also record in agent_actions
       if (isAgentTip) {
         await supabase.from("agent_actions").insert({
           twitter_handle: creator.twitter_handle,
