@@ -12,7 +12,6 @@ import { getAddress } from 'viem'
 import { validateTipAmount } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
 
-// Testnet facilitator URL
 const TESTNET_FACILITATOR_URL = 'https://x402.org/facilitator'
 
 export async function GET(
@@ -90,8 +89,6 @@ export async function GET(
       'base-sepolia': '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
     }
 
-    // Standard x402 payment requirements (for 402 response to client)
-    // Ensure addresses are checksummed
     const checksummedPayTo = getAddress(creator.evm_wallet_address)
     const checksummedAsset = getAddress(usdcAddresses[network])
 
@@ -99,7 +96,7 @@ export async function GET(
       scheme: 'exact' as const,
       payTo: checksummedPayTo,
       network,
-      maxAmountRequired: amountInSmallestUnit.toString(), // Must be string
+      maxAmountRequired: amountInSmallestUnit.toString(),
       asset: checksummedAsset,
       resource: request.url,
       description: `Tip ${creator.name} $${amount} USDC on Base`,
@@ -113,7 +110,6 @@ export async function GET(
 
     console.log('[Base x402] Payment requirements (standard x402 format):', JSON.stringify(paymentRequirements, null, 2))
 
-    // Use testnet facilitator for base-sepolia
     const facilitatorConfig = {
       url: TESTNET_FACILITATOR_URL as `${string}://${string}`
     }
@@ -125,7 +121,6 @@ export async function GET(
     const paymentHeader = request.headers.get('x-payment')
 
     if (!paymentHeader) {
-      // No payment provided - return 402 with payment requirements
       return NextResponse.json(
         {
           x402Version: 1,
@@ -135,11 +130,9 @@ export async function GET(
       )
     }
 
-    // Payment header exists - verify and settle
     console.log('[Base x402] Verifying payment...')
     console.log('[Base x402] Payment header received:', paymentHeader.substring(0, 100) + '...')
 
-    // Parse the payment payload from the header
     let paymentPayload
     try {
       const decoded = Buffer.from(paymentHeader, 'base64').toString('utf-8')
@@ -153,10 +146,8 @@ export async function GET(
       )
     }
 
-    // The facilitator uses the SAME standard x402 format as the client!
     console.log('[Base x402] Using standard x402 PaymentRequirements for verify/settle')
 
-    // verify() expects payment payload and standard payment requirements
     let verificationResult
     try {
       verificationResult = await verify(paymentPayload, paymentRequirements as any)
@@ -178,7 +169,6 @@ export async function GET(
 
     console.log('[Base x402] Payment verified, settling...')
 
-    // Settle the payment on-chain using the same standard format
     const settlementResult = await settle(paymentPayload, paymentRequirements as any)
 
     if (!settlementResult.success) {
