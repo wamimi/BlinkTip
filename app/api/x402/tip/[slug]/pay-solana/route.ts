@@ -11,10 +11,9 @@ import { supabase } from '@/lib/supabase'
 import { validateTipAmount } from '@/lib/validation'
 import { rateLimit } from '@/lib/rate-limit'
 
-// Token mint addresses (MUST match what client expects!)
 const TOKENS = {
-  USDC: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr', // USDC Devnet (correct address)
-  CASH: 'CASHedBw9NfhsLBXq1WNVfueVznx255j8LLTScto3S6s', // Phantom CASH
+  USDC: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr',
+  CASH: 'CASHedBw9NfhsLBXq1WNVfueVznx255j8LLTScto3S6s',
 }
 
 export async function GET(
@@ -66,10 +65,9 @@ export async function GET(
       wallet_address: creator.wallet_address,
     })
 
-    // Create x402 handler with THIS creator's wallet address (not treasury!)
     const x402Handler = new X402PaymentHandler({
       network: 'solana-devnet',
-      treasuryAddress: creator.wallet_address, // ✅ Use creator's wallet
+      treasuryAddress: creator.wallet_address,
       facilitatorUrl: 'https://facilitator.payai.network',
     })
 
