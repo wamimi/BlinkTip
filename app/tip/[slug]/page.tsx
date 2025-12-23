@@ -32,7 +32,6 @@ export default function TipPage() {
   const [txSignature, setTxSignature] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Detect which network user is connected to
   const isEVMConnection = caipAddress?.startsWith('eip155:')
   const isSolanaConnection = caipAddress?.startsWith('solana:')
 
@@ -52,7 +51,6 @@ export default function TipPage() {
     fetchCreator()
   }, [slug])
 
-  // --- LOGIC: Keeping your existing Tip Logic ---
   const handleTip = async () => {
     setTipping(true)
     setError(null)
@@ -66,7 +64,6 @@ export default function TipPage() {
       if (selectedChain === 'solana') {
         if (!creator?.wallet_address) throw new Error('Creator does not accept Solana tips yet')
 
-        // Check if user is connected to Solana network
         if (!isSolanaConnection) {
           throw new Error('Please switch to Solana network to tip on Solana. Click your wallet and select Solana Devnet.')
         }
@@ -74,31 +71,26 @@ export default function TipPage() {
         console.log('[x402-Solana-PAI] Starting payment flow...')
         console.log('[x402-Solana-PAI] Tipper address:', address)
 
-        // Import x402-solana client
         const { createX402Client } = await import('x402-solana/client')
 
-        // Get Solana wallet adapter from Reown
         const solanaProvider = (window as any).solana
         if (!solanaProvider) {
           throw new Error('Solana wallet not found. Please connect a Solana wallet.')
         }
 
-        // Ensure wallet is connected
         if (!solanaProvider.isConnected) {
           await solanaProvider.connect()
         }
 
         console.log('[x402-Solana-PAI] Creating x402 client...')
 
-        // Create wallet adapter interface that x402-solana expects
         const walletAdapter = {
-          address: address, // Reown provides base58 string address
+          address: address,
           signTransaction: async (tx: any) => {
             return await solanaProvider.signTransaction(tx)
           },
         }
 
-        // Create x402 client with wallet and network config
         const x402Client = createX402Client({
           wallet: walletAdapter,
           network: 'solana-devnet',
@@ -107,7 +99,6 @@ export default function TipPage() {
 
         console.log('[x402-Solana-PAI] Calling payment endpoint...')
 
-        // Make the payment request - x402 client handles everything!
         const response = await x402Client.fetch(
           `/api/x402/tip/${slug}/pay-solana?amount=${tipAmount}&token=USDC`,
           {
@@ -132,33 +123,28 @@ export default function TipPage() {
       } else if (selectedChain === 'base') {
         if (!creator?.evm_wallet_address) throw new Error('Creator does not accept Base tips yet')
 
-        // Check if user is connected to EVM network
         if (!isEVMConnection) {
           throw new Error('Please switch to Base network to tip on Base. Click your wallet and select Base Sepolia.')
         }
 
         if (!walletClient) throw new Error('Wallet not connected')
 
-        // Import x402 client dynamically
         const { createPaymentHeader } = await import('x402/client')
 
-        console.log('[x402-Base] Step 1: Getting payment requirements...')
+        console.log('[x402-Base] Getting payment requirements...')
         console.log('[x402-Base] Tipper address (EVM):', address)
 
-        // 1. Get Payment Requirements
         const initRes = await fetch(`/api/x402/tip/${slug}/pay-base?amount=${tipAmount}&token=USDC`)
         if (initRes.status !== 402) throw new Error('Payment initialization failed')
         const paymentData = await initRes.json()
 
-        console.log('[x402-Base] Step 2: Payment requirements received')
-        console.log('[x402-Base] Step 3: Signing payment with wallet...')
+        console.log('[x402-Base] Payment requirements received')
+        console.log('[x402-Base] Signing payment with wallet...')
 
-        // 2. Sign
         const paymentHeader = await createPaymentHeader(walletClient as any, 1, paymentData.paymentRequirements[0])
 
-        console.log('[x402-Base] Step 4: Payment signed, submitting...')
+        console.log('[x402-Base] Payment signed, submitting...')
 
-        // 3. Submit
         const finalRes = await fetch(`/api/x402/tip/${slug}/pay-base?amount=${tipAmount}&token=USDC`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'x-payment': paymentHeader }
