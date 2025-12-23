@@ -31,7 +31,6 @@ export default function RegisterPage() {
   const [solanaVerificationMessage, setSolanaVerificationMessage] = useState('')
   const [evmVerificationMessage, setEvmVerificationMessage] = useState('')
 
-  // Determine connection type BEFORE using in useEffect
   const isEVMConnection = caipAddress?.startsWith('eip155:')
   const isSolanaConnection = caipAddress?.startsWith('solana:')
 
@@ -43,7 +42,6 @@ export default function RegisterPage() {
     }
   }, [session])
 
-  // Request Solana wallet signature
   const requestSolanaSignature = async (walletAddress: string) => {
     if (!solanaWalletProvider || solanaSignature) return
 
@@ -63,7 +61,6 @@ export default function RegisterPage() {
     }
   }
 
-  // Request EVM wallet signature
   const requestEvmSignature = async (walletAddress: string) => {
     if (!signEvmMessage || evmSignature) return
 
@@ -81,7 +78,6 @@ export default function RegisterPage() {
     }
   }
 
-  // Auto-detect BOTH Solana and EVM addresses from multi-chain wallet
   useEffect(() => {
     if (!isConnected) {
       setSolanaAddress('')
@@ -92,37 +88,30 @@ export default function RegisterPage() {
     }
 
     const detectAddresses = async () => {
-      // Set current connected address first and request signature
       if (isSolanaConnection && address) {
         if (address !== solanaAddress) {
           setSolanaAddress(address)
-          // Request Solana signature when address is set
           requestSolanaSignature(address)
         }
       } else if (isEVMConnection && address) {
         if (address !== evmAddress) {
           setEvmAddress(address)
-          // Request EVM signature when address is set
           requestEvmSignature(address)
         }
       }
 
-      // Try to detect the OTHER chain's address from the same wallet
       try {
-        // If currently on Solana, try to get EVM address
         if (isSolanaConnection) {
           if (typeof window !== 'undefined' && (window as any).ethereum) {
             const accounts = await (window as any).ethereum.request({ method: 'eth_accounts' })
             if (accounts && accounts[0] && accounts[0] !== evmAddress) {
               setEvmAddress(accounts[0])
               console.log('[Register] Detected EVM address from multi-chain wallet:', accounts[0])
-              // Request EVM signature for the detected address
               requestEvmSignature(accounts[0])
             }
           }
         }
 
-        // If currently on EVM, try to get Solana address
         if (isEVMConnection) {
           if (typeof window !== 'undefined' && (window as any).solana) {
             try {
@@ -132,12 +121,11 @@ export default function RegisterPage() {
                 if (solAddr !== solanaAddress) {
                   setSolanaAddress(solAddr)
                   console.log('[Register] Detected Solana address from multi-chain wallet:', solAddr)
-                  // Request Solana signature for the detected address
                   requestSolanaSignature(solAddr)
                 }
               }
             } catch (e) {
-              // Wallet might not support Solana or not trusted yet
+              console.log('[Register] Could not auto-connect Solana wallet')
             }
           }
         }
@@ -159,13 +147,11 @@ export default function RegisterPage() {
     if (!isConnected || !address) { setError('Please connect your wallet first'); return }
     if (!name.trim()) { setError('Name is required'); return }
 
-    // Require at least one address
     if (!solanaAddress && !evmAddress) {
       setError('Could not detect any wallet addresses. Please reconnect your wallet.')
       return
     }
 
-    // Validate that we have signatures for the addresses we're submitting
     if (solanaAddress && !solanaSignature) {
       setError('Please sign the message with your Solana wallet first')
       return
@@ -180,10 +166,9 @@ export default function RegisterPage() {
     setError(null)
 
     try {
-      // Build supported chains based on detected addresses
       const supportedChains = []
       if (solanaAddress) supportedChains.push('solana')
-      if (evmAddress) supportedChains.push('base') // We support Base for EVM
+      if (evmAddress) supportedChains.push('base')
 
       const isTwitterAuth = embeddedWalletInfo?.authProvider === 'x'
       const twitterData = isTwitterAuth ? {
@@ -238,7 +223,6 @@ export default function RegisterPage() {
     }
   }
 
-  // SUCCESS SCREEN
   if (success) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6 relative overflow-hidden">
@@ -302,7 +286,6 @@ export default function RegisterPage() {
     )
   }
 
-  // REGISTRATION FORM
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black py-12 px-4 relative">
       <div className="max-w-6xl mx-auto">
