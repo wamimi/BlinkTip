@@ -48,9 +48,9 @@ export async function GET() {
         recommendedAmount: 1.0,
         tipPerCreator: 0.1,
         howToFund: [
-          "1. Send USDC devnet tokens directly to the agent wallet address above",
-          "2. Or use the x402 payment protocol via POST to this endpoint",
-          "3. Get devnet USDC from: https://spl-token-faucet.com",
+          "Send USDC devnet tokens directly to the agent wallet address above",
+          "Or use the x402 payment protocol via POST to this endpoint",
+          "Get devnet USDC from: https://spl-token-faucet.com",
         ],
       },
       x402Endpoint: {

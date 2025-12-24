@@ -1,11 +1,5 @@
 /**
  * CDP Server-Side Wallet Service for Autonomous Agent
- *
- * This service handles:
- * - Creating/loading the agent's Solana wallet via CDP
- * - Checking balance
- * - Sending USDC tips to creators
- * - Signing transactions on Solana
  */
 
 import { CdpClient } from "@coinbase/cdp-sdk";
