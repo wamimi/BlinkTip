@@ -1,7 +1,5 @@
 /**
  * Test Script: Celo Wallet Integration
- *
- * Tests the thirdweb server wallet connection and balance fetching on Celo Sepolia
  */
 
 import { getAgentBalanceCelo, getWalletInfo } from "../agent/lib/services/celo/thirdweb-wallet";
@@ -55,13 +53,13 @@ async function main() {
     if (!canTipUSDC && !canTipCUSD) {
       console.log("⚠️  LOW BALANCE - Funding Instructions:");
       console.log("");
-      console.log("1. Get Celo Sepolia testnet tokens:");
+      console.log("Get Celo Sepolia testnet tokens:");
       console.log("   https://faucet.celo.org/alfajores (select Celo Sepolia)");
       console.log("");
-      console.log("2. Your wallet address:");
+      console.log("Your wallet address:");
       console.log(`   ${balances.address}`);
       console.log("");
-      console.log("3. Request:");
+      console.log("Request:");
       console.log("   - CELO (for gas fees - if needed)");
       console.log("   - cUSD (for tipping)");
       console.log("   - USDC (for tipping)");
