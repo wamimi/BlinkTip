@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useAppKitAccount, useAppKit } from '@reown/appkit/react'
 import { useWalletClient } from 'wagmi'
+import { useMiniApp } from '@/context/miniapp'
 
 // Define Creator Type
 type Creator = {
@@ -20,13 +21,23 @@ const TIP_AMOUNTS = [1, 5, 10, 20]
 export default function TipPage() {
   const params = useParams()
   const slug = params.slug as string
+
+  // Mini App detection
+  const { isInMiniApp, user: miniAppUser, walletAddress: miniAppWalletAddress } = useMiniApp()
+
+  // Existing Reown wallet hooks
   const { address, isConnected, caipAddress } = useAppKitAccount()
   const { open } = useAppKit()
   const { data: walletClient } = useWalletClient()
 
+  // Determine which wallet to use
+  const activeAddress = isInMiniApp ? miniAppWalletAddress : address
+  const activeConnection = isInMiniApp ? !!miniAppWalletAddress : isConnected
+
   const [creator, setCreator] = useState<Creator | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedChain, setSelectedChain] = useState<'solana' | 'base'>('solana')
+  // Default to 'base' when in mini app, 'solana' for web
+  const [selectedChain, setSelectedChain] = useState<'solana' | 'base'>(isInMiniApp ? 'base' : 'solana')
   const [amount, setAmount] = useState<number | ''>(5)
   const [tipping, setTipping] = useState(false)
   const [txSignature, setTxSignature] = useState<string | null>(null)
@@ -59,7 +70,7 @@ export default function TipPage() {
     try {
       const tipAmount = typeof amount === 'string' ? parseFloat(amount) : amount
       if (!tipAmount || tipAmount <= 0) throw new Error('Invalid amount')
-      if (!address || !isConnected) throw new Error('Please connect your wallet')
+      if (!activeAddress || !activeConnection) throw new Error('Please connect your wallet')
 
       if (selectedChain === 'solana') {
         if (!creator?.wallet_address) throw new Error('Creator does not accept Solana tips yet')
