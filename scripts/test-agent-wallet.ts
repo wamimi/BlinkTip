@@ -53,10 +53,10 @@ async function main() {
     console.log(`SOL: ${balance.balanceSOL.toFixed(4)}`);
     console.log(`USDC: $${balance.balanceUSDC.toFixed(2)}`);
     console.log(`Status: ${balance.canTip ? "✓ Ready to tip" : "⚠️  Needs USDC funding"}`);
-    console.log("\n✅ All tests passed!\n");
+    console.log("\nAll tests passed!\n");
 
     if (!balance.canTip) {
-      console.log("💡 To fund the agent:");
+      console.log("To fund the agent:");
       console.log(`   1. Send USDC devnet tokens to: ${wallet.address}`);
       console.log("   2. Or use the x402 funding endpoint:");
       console.log("      POST http://localhost:3000/api/x402/fund-agent?amount=1.0\n");
