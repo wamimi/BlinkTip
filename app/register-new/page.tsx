@@ -5,15 +5,24 @@ import { useAppKitAccount, useAppKitNetwork, useAppKit, useAppKitProvider } from
 import type { Provider } from '@reown/appkit-adapter-solana/react'
 import { useSession, signIn } from 'next-auth/react'
 import { useSignMessage } from 'wagmi'
+import { useMiniApp } from '@/context/miniapp'
 import Link from 'next/link'
 
 export default function RegisterPage() {
+  // Mini App detection
+  const { isInMiniApp, user: miniAppUser, walletAddress: miniAppWalletAddress } = useMiniApp()
+
+  // Existing Reown wallet hooks
   const { address, isConnected, caipAddress, embeddedWalletInfo } = useAppKitAccount()
   const { caipNetwork } = useAppKitNetwork()
   const { open } = useAppKit()
   const { data: session } = useSession()
   const { walletProvider: solanaWalletProvider } = useAppKitProvider<Provider>('solana')
   const { signMessageAsync: signEvmMessage } = useSignMessage()
+
+  // Determine which wallet to use
+  const activeAddress = isInMiniApp ? miniAppWalletAddress : address
+  const activeConnection = isInMiniApp ? !!miniAppWalletAddress : isConnected
 
   const [slug, setSlug] = useState('')
   const [name, setName] = useState('')
@@ -35,12 +44,20 @@ export default function RegisterPage() {
   const isSolanaConnection = caipAddress?.startsWith('solana:')
 
   useEffect(() => {
-    if (session?.user) {
+    // Populate from Mini App user (Farcaster)
+    if (isInMiniApp && miniAppUser) {
+      if (miniAppUser.username && !slug) setSlug(miniAppUser.username)
+      if (miniAppUser.displayName && !name) setName(miniAppUser.displayName)
+      if (miniAppUser.pfpUrl && !avatarUrl) setAvatarUrl(miniAppUser.pfpUrl)
+      if (miniAppUser.bio && !bio) setBio(miniAppUser.bio)
+    }
+    // Populate from Twitter session (existing flow)
+    else if (session?.user) {
       if (session.user.twitterHandle && !slug) setSlug(session.user.twitterHandle)
       if (session.user.twitterName && !name) setName(session.user.twitterName)
       if (session.user.twitterAvatarUrl && !avatarUrl) setAvatarUrl(session.user.twitterAvatarUrl)
     }
-  }, [session])
+  }, [session, isInMiniApp, miniAppUser])
 
   const requestSolanaSignature = async (walletAddress: string) => {
     if (!solanaWalletProvider || solanaSignature) return
@@ -144,7 +161,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isConnected || !address) { setError('Please connect your wallet first'); return }
+    if (!activeConnection || !activeAddress) { setError('Please connect your wallet first'); return }
     if (!name.trim()) { setError('Name is required'); return }
 
     if (!solanaAddress && !evmAddress) {
@@ -313,19 +330,26 @@ export default function RegisterPage() {
             
             <div className="space-y-6">
               {/* Step 1 Card */}
-              <div className={`p-6 rounded-3xl border-2 transition-all duration-300 ${isConnected ? 'bg-green-50/50 border-green-500/30 dark:bg-green-900/10 dark:border-green-800' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 shadow-lg'}`}>
+              <div className={`p-6 rounded-3xl border-2 transition-all duration-300 ${activeConnection ? 'bg-green-50/50 border-green-500/30 dark:bg-green-900/10 dark:border-green-800' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 shadow-lg'}`}>
                 <div className="flex items-center gap-5">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl transition-all ${isConnected ? 'bg-green-500 text-white shadow-green-500/30 shadow-lg' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400'}`}>1</div>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl transition-all ${activeConnection ? 'bg-green-500 text-white shadow-green-500/30 shadow-lg' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400'}`}>1</div>
                   <div className="flex-1">
                     <h3 className="font-bold text-xl mb-1">Connect Wallet</h3>
-                    <p className="text-sm text-gray-500">{isConnected ? 'Wallet connected successfully' : 'External or Social Login'}</p>
+                    <p className="text-sm text-gray-500">
+                      {isInMiniApp && activeConnection ? 'Base Account connected' : activeConnection ? 'Wallet connected successfully' : 'External or Social Login'}
+                    </p>
                   </div>
-                  {isConnected && <div className="text-green-500 text-xl">✓</div>}
+                  {activeConnection && <div className="text-green-500 text-xl">✓</div>}
                 </div>
-                {!isConnected && (
+                {!isInMiniApp && !isConnected && (
                   <button onClick={() => open()} className="mt-6 w-full py-4 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-bold hover:scale-[1.02] transition-transform">
                     Connect Now
                   </button>
+                )}
+                {isInMiniApp && activeConnection && (
+                  <div className="mt-4 text-xs text-gray-500 text-center">
+                    ✨ Auto-connected via Base App
+                  </div>
                 )}
               </div>
 
@@ -350,7 +374,7 @@ export default function RegisterPage() {
 
           {/* Right Side: The Form */}
           <div className="glass-card p-8 md:p-10 rounded-[2.5rem] animate-slide-up [animation-delay:200ms] relative overflow-hidden ring-1 ring-white/50 dark:ring-white/10">
-            {!isConnected && (
+            {!activeConnection && (
                <div className="absolute inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-md z-10 flex flex-col items-center justify-center text-center p-8">
                  <div className="text-4xl mb-4">🔒</div>
                  <h3 className="text-2xl font-bold mb-2">Profile Locked</h3>
@@ -362,11 +386,22 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
 
               {/* Show detected wallet addresses */}
-              {isConnected && (
+              {activeConnection && (
                 <div className="bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
-                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Detected Wallet Addresses</p>
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    {isInMiniApp ? 'Base Account Address' : 'Detected Wallet Addresses'}
+                  </p>
                   <div className="space-y-2 text-sm">
-                    {solanaAddress ? (
+                    {isInMiniApp && miniAppWalletAddress ? (
+                      <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-2">
+                        <span className="text-blue-600">✓</span>
+                        <span className="font-semibold">⬡ Base:</span>
+                        <span className="font-mono text-xs">
+                          {miniAppWalletAddress.slice(0, 6)}...{miniAppWalletAddress.slice(-4)}
+                        </span>
+                      </div>
+                    ) : null}
+                    {!isInMiniApp && solanaAddress ? (
                       <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-2">
                         <span className="text-green-600">✓</span>
                         <span className="font-semibold">◎ Solana:</span>
