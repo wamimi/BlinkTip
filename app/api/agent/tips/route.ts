@@ -56,13 +56,13 @@ export async function POST(request: NextRequest) {
       .from('tips')
       .insert({
         creator_id: creator.id,
-        from_address: agentWalletAddress, // Use actual wallet address
+        from_address: agentWalletAddress,
         amount: parseFloat(amount),
         token: 'USDC',
         signature: signature,
         source: 'agent',
         status: transactionExists ? 'confirmed' : 'pending',
-        is_agent_tip: true, // IMPORTANT: Mark as agent tip for stats
+        is_agent_tip: true,
         agent_reasoning: reason,
         metadata: {
           network: 'solana-devnet',
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         twitter_handle: creator.twitter_handle,
         content_url: `https://twitter.com/${creator.twitter_handle}`,
         content_title: creator.name,
-        decision: 'TIP', // Use uppercase 'TIP' to match check constraint
+        decision: 'TIP',
         tip_id: tip.id,
         reasoning: reason || 'Autonomous tip via x402',
         yaps_score_7d: null,
