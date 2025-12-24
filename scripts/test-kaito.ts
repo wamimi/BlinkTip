@@ -1,10 +1,5 @@
 /**
  * Test script for Kaito Yaps API
- *
- * Tests:
- * - Fetching Yaps scores
- * - Analyzing trends
- * - Threshold checking
  */
 
 import { getYapsScore, analyzeYapsScore, meetsYapsThreshold } from "../agent/lib/services/kaito";
