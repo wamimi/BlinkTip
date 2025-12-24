@@ -2,9 +2,6 @@
  * Celo Tipping Service for Agent
  *
  * Implements autonomous agent tipping on Celo via x402 protocol using thirdweb.
- * Supports USDC (6 decimals) and cUSD (18 decimals) stablecoins.
- *
- * This service uses thirdweb's x402 client-side wrapper to pay for API endpoints.
  */
 
 import { createThirdwebClient } from "thirdweb";
