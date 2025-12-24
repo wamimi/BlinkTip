@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     optimizeCss: false,
   },
   
-  // Tell Vercel to use ONLY linux binaries
+  
   output: 'standalone',
   
   images: {
@@ -46,10 +46,10 @@ const nextConfig: NextConfig = {
     resolveExtensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
   },
 
-  // NUCLEAR EXCLUSIONS - exclude ALL platform-specific and heavy deps
+  // exclude all platform-specific and heavy deps
   outputFileTracingExcludes: {
     '*': [
-      // Mac-specific binaries (CRITICAL - these are causing bloat!)
+      // Mac-specific binaries
       'node_modules/@next/swc-darwin-arm64/**',
       'node_modules/@img/sharp-libvips-darwin-arm64/**',
       'node_modules/lightningcss-darwin-arm64/**',
@@ -64,7 +64,7 @@ const nextConfig: NextConfig = {
       'node_modules/**/test/**',
       'node_modules/**/*.test.*',
       
-      // ALL Solana packages (we'll include only for specific routes)
+      // ALL Solana packages 
       'node_modules/@solana/**',
       'node_modules/@coinbase/**',
       'node_modules/thirdweb/**',
@@ -90,7 +90,7 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Include native modules but ONLY Linux ones
+  // Include native modules but only Linux ones
   outputFileTracingIncludes: {
     '/': [
       'node_modules/**/*-linux-*.node',
@@ -138,7 +138,7 @@ const nextConfig: NextConfig = {
         })
       )
     } else {
-      // Externalize EVERYTHING heavy on server side
+      // Externalize everything heavy on server side
       config.externals.push(
         'pino-pretty', 
         'lokijs', 
