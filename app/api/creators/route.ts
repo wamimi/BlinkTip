@@ -50,7 +50,6 @@ export async function POST(request: NextRequest) {
       evm_verification_message,
     } = body
 
-    // Validate required fields
     if (!slug || !name) {
       return NextResponse.json(
         { error: 'Missing required fields: slug, name' },
@@ -58,7 +57,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Must have at least one wallet address
     if (!wallet_address && !evm_wallet_address) {
       return NextResponse.json(
         { error: 'At least one wallet address (Solana or EVM) is required' },
@@ -66,7 +64,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify Solana wallet ownership if provided
     if (wallet_address) {
       if (!wallet_signature || !verification_message) {
         return NextResponse.json(
@@ -89,7 +86,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Verify EVM wallet ownership if provided
     if (evm_wallet_address) {
       if (!evm_wallet_signature || !evm_verification_message) {
         return NextResponse.json(
@@ -172,7 +168,7 @@ export async function POST(request: NextRequest) {
         twitter_handle: twitter_handle || null,
         twitter_name: twitter_name || null,
         twitter_avatar_url: twitter_avatar_url || null,
-        twitter_verified: !!twitter_id, // If we have twitter_id, they're verified
+        twitter_verified: !!twitter_id,
         twitter_follower_count: twitter_follower_count || 0,
         twitter_created_at: twitter_created_at || null,
       })
