@@ -1,18 +1,8 @@
 /**
- * BlinkTip Autonomous Tipping Agent - Multi-Chain Edition
+ * BlinkTip Autonomous Tipping Agent
  *
- * This agent:
- * 1. Discovers verified creators from BlinkTip database
- * 2. Fetches their Kaito Yaps scores (influence metrics)
- * 3. Uses AI (OpenRouter + Claude) to decide who to tip
- * 4. Sends USDC tips on MULTIPLE chains:
- *    - Solana (via CDP Server-Side Wallet + x402)
- *    - Celo (via Thirdweb Server Wallet + x402)
- * 5. Logs all decisions to database for transparency
- *
- * Multi-Chain Strategy:
- * - If creator supports BOTH chains: tip on BOTH ($0.05 each)
- * - If creator supports ONE chain: tip on that chain ($0.10)
+ * Autonomous agent that discovers verified creators, analyzes their influence metrics,
+ * and distributes USDC tips across multiple blockchains (Solana, Celo) using x402 protocol.
  */
 
 import { ChatOpenAI } from "@langchain/openai";
@@ -201,7 +191,7 @@ Respond ONLY with valid JSON in this exact format:
  * Run the autonomous tipping agent
  */
 export async function runTippingAgent(): Promise<AgentRunResult> {
-  console.log("\n🤖 ===== BlinkTip Autonomous Agent Starting ===== 🤖\n");
+  console.log("\nBlinkTip Autonomous Agent Starting\n");
 
   const result: AgentRunResult = {
     success: false,
@@ -220,7 +210,7 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
   };
 
   try {
-    console.log("📍 Step 1: Checking agent wallet...\n");
+    console.log("Checking agent wallet...\n");
     const wallet = await getOrCreateAgentWallet();
     const balance = await getAgentBalance();
     result.walletBalances.solana = {
@@ -240,7 +230,7 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
 
     console.log(`✓ Wallet ready. Can send up to ${Math.floor(balance.balanceUSDC / AGENT_CONFIG.TIP_AMOUNT_USDC)} tips.\n`);
 
-    console.log(" Step 2: Fetching verified creators...\n");
+    console.log("Fetching verified creators...\n");
     const creators = await getAllVerifiedCreators();
     console.log(`Found ${creators.length} verified creators\n`);
 
@@ -250,7 +240,7 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
       return result;
     }
 
-    console.log(" Step 3: Analyzing creators...\n");
+    console.log("Analyzing creators...\n");
     let tipsCreated = 0;
 
     for (const creator of creators) {
@@ -313,7 +303,7 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
           continue;
         }
 
-        console.log(`\n💰 Sending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip via x402...`);
+        console.log(`\nSending $${AGENT_CONFIG.TIP_AMOUNT_USDC} USDC tip via x402...`);
         const tipResult = await tipCreatorViaX402(
           creator.slug,
           AGENT_CONFIG.TIP_AMOUNT_USDC,
@@ -367,12 +357,12 @@ export async function runTippingAgent(): Promise<AgentRunResult> {
 
     result.tipsCreated = tipsCreated;
 
-    console.log("\n Step 4: Fetching agent statistics...\n");
+    console.log("\nFetching agent statistics...\n");
     result.stats = await getAgentStats();
 
     result.success = true;
 
-    console.log("\n ===== Agent Run Complete ===== \n");
+    console.log("\nAgent Run Complete\n");
     console.log(`Creators Analyzed: ${result.creatorsAnalyzed}`);
     console.log(`Tips Created: ${result.tipsCreated}`);
     console.log(`Skipped: ${result.skipped}`);
