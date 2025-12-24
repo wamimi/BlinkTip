@@ -199,7 +199,7 @@ export async function logAgentDecision(
 ): Promise<boolean> {
   try {
     const { error } = await supabase.from("agent_actions").insert({
-      content_url: `https://twitter.com/${decision.twitterHandle}`, // Use creator's Twitter profile as content
+      content_url: `https://twitter.com/${decision.twitterHandle}`,
       twitter_handle: decision.twitterHandle,
       decision: decision.decision,
       reasoning: decision.reason,

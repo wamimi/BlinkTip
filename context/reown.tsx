@@ -16,8 +16,6 @@ const metadata = {
   icons: ['https://blink-tip.vercel.app/icon.png']
 }
 
-// Create AppKit for wallet creation (email, social, external wallets)
-// Twitter verification handled separately via NextAuth for profile data
 if (!projectId) {
   throw new Error('NEXT_PUBLIC_REOWN_PROJECT_ID is not set')
 }
@@ -30,8 +28,8 @@ createAppKit({
   metadata,
   features: {
     analytics: true,
-    email: true, // Enable email embedded wallets
-    socials: ['google', 'github', 'discord', 'apple'], // Social logins (X handled via NextAuth)
+    email: true,
+    socials: ['google', 'github', 'discord', 'apple'],
     emailShowWallets: true,
   },
   allWallets: 'SHOW',

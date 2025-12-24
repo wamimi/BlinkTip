@@ -1,6 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// Lazy initialization - only creates client when actually needed
 let supabaseInstance: SupabaseClient | null = null
 
 export function getSupabase() {
@@ -19,7 +18,6 @@ export function getSupabase() {
   return supabaseInstance
 }
 
-// For backwards compatibility - but prefer using getSupabase()
 export const supabase = new Proxy({} as SupabaseClient, {
   get(target, prop) {
     return getSupabase()[prop as keyof SupabaseClient]
