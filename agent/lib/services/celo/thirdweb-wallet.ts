@@ -1,10 +1,5 @@
 /**
  * Thirdweb Server Wallet Service for Celo
- *
- * Manages the agent's server-side wallet on Celo using thirdweb SDK.
- * This wallet is used for autonomous tipping on Celo blockchain.
- *
- * Similar to cdp-wallet.ts but for EVM chains (Celo).
  */
 
 import { createThirdwebClient, defineChain } from "thirdweb";
