@@ -96,3 +96,9 @@ export function useMiniApp() {
   }
   return context;
 }
+
+// Helper hook to check if user has connected Base Account in mini app
+export function useIsBaseAccountConnected() {
+  const { isInMiniApp, walletAddress } = useMiniApp();
+  return isInMiniApp && !!walletAddress;
+}
