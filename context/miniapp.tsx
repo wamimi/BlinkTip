@@ -15,6 +15,8 @@ interface MiniAppUser {
 interface MiniAppContextType {
   isInMiniApp: boolean;
   isReady: boolean;
+  isLoading: boolean;
+  error: string | null;
   user: MiniAppUser | null;
   walletAddress: string | null;
   walletSource: 'base-account' | 'reown' | null;
@@ -25,6 +27,8 @@ const MiniAppContext = createContext<MiniAppContextType | undefined>(undefined);
 export function MiniAppProvider({ children }: { children: ReactNode }) {
   const [isInMiniApp, setIsInMiniApp] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<MiniAppUser | null>(null);
 
   // Wagmi hook for Base Account (when in mini app)
@@ -33,6 +37,8 @@ export function MiniAppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function initialize() {
       try {
+        setIsLoading(true);
+
         // Check if running in mini app
         const miniAppStatus = await sdk.isInMiniApp();
         setIsInMiniApp(miniAppStatus);
@@ -50,10 +56,14 @@ export function MiniAppProvider({ children }: { children: ReactNode }) {
         }
 
         setIsReady(true);
-      } catch (error) {
-        console.error('Mini app initialization error:', error);
+        setIsLoading(false);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error during mini app initialization';
+        console.error('❌ Mini app initialization error:', err);
+        setError(errorMessage);
         // Still set ready even on error - fallback to web mode
         setIsReady(true);
+        setIsLoading(false);
       }
     }
 
@@ -68,6 +78,8 @@ export function MiniAppProvider({ children }: { children: ReactNode }) {
     <MiniAppContext.Provider value={{
       isInMiniApp,
       isReady,
+      isLoading,
+      error,
       user,
       walletAddress,
       walletSource
