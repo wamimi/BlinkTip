@@ -1,0 +1,12 @@
+{
+  "miniapp": {
+    "version": "1",
+    "name": "BlinkTip",
+    "iconUrl": "https://blink-tip.vercel.app/icon.png",
+    "homeUrl": "https://blink-tip.vercel.app",
+    "splashImageUrl": "https://blink-tip.vercel.app/splash.png",
+    "splashBackgroundColor": "#8B5CF6",
+    "heroImageUrl": "https://blink-tip.vercel.app/hero.png",
+    "tagline": "Get tipped instantly and anywhere!"
+  }
+}
