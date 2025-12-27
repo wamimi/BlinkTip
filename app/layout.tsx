@@ -24,6 +24,18 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: minikitConfig.miniapp.name,
     description: minikitConfig.miniapp.description,
+    openGraph: {
+      title: minikitConfig.miniapp.ogTitle,
+      description: minikitConfig.miniapp.ogDescription,
+      images: [minikitConfig.miniapp.ogImageUrl],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: minikitConfig.miniapp.ogTitle,
+      description: minikitConfig.miniapp.ogDescription,
+      images: [minikitConfig.miniapp.ogImageUrl],
+    },
     other: {
       'base:app_id': '694fd0eb4d3a403912ed823c',
       'fc:miniapp': JSON.stringify({
