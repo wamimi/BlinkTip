@@ -23,11 +23,11 @@ export const minikitConfig = {
     webhookUrl: `${ROOT_URL}/api/webhook`, // For notifications and XMTP agent later
     primaryCategory: "social",
     tags: ["crypto", "tips", "ai", "agents", "web3"],
-    heroImageUrl: `${ROOT_URL}/og-image.png`,
-    tagline: "Get tipped instantly",
+    heroImageUrl: `${ROOT_URL}/hero.png`,
+    tagline: "Get tipped instantly and anywhere!",
     ogTitle: "BlinkTip - Universal Micro-Tip Links",
     ogDescription: "Accept tips from humans and AI agents across multiple chains",
-    ogImageUrl: `${ROOT_URL}/og-image.png`,
+    ogImageUrl: `${ROOT_URL}/hero.png`,
     noindex: false // Set to true during testing/development
   }
 } as const;
