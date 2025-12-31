@@ -27,6 +27,8 @@
   "dependencies": {
     "@coinbase/cdp-sdk": "^1.38.5",
     "@coinbase/x402": "^0.7.3",
+    "@farcaster/miniapp-sdk": "^0.2.1",
+    "@farcaster/miniapp-wagmi-connector": "^1.1.0",
     "@langchain/core": "^1.0.4",
     "@langchain/openai": "^1.1.0",
     "@lit/react": "^1.0.8",

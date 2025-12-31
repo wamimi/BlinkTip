@@ -5,7 +5,9 @@ import { SolanaWalletProvider } from './providers/SolanaWalletProvider'
 import { ThirdwebProvider } from './providers/ThirdwebProvider'
 import { AuthProvider } from './providers'
 import { ClientReownProvider } from '@/components/ClientReownProvider'
+import { MiniAppWagmiProvider } from './providers/MiniAppWagmiProvider'
 import { headers } from 'next/headers'
+import { minikitConfig } from '@/minikit.config'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -17,9 +19,41 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-export const metadata: Metadata = {
-  title: 'BlinkTip - Universal Micro-Tip Links',
-  description: 'Accept tips from humans via Solana Actions and AI agents via x402 protocol. Multi-chain support for Solana and Base.',
+// Generate metadata with Mini App embed support
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: minikitConfig.miniapp.name,
+    description: minikitConfig.miniapp.description,
+    openGraph: {
+      title: minikitConfig.miniapp.ogTitle,
+      description: minikitConfig.miniapp.ogDescription,
+      images: [minikitConfig.miniapp.ogImageUrl],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: minikitConfig.miniapp.ogTitle,
+      description: minikitConfig.miniapp.ogDescription,
+      images: [minikitConfig.miniapp.ogImageUrl],
+    },
+    other: {
+      'base:app_id': '694fd0eb4d3a403912ed823c',
+      'fc:miniapp': JSON.stringify({
+        version: 'next',
+        imageUrl: minikitConfig.miniapp.heroImageUrl,
+        button: {
+          title: `Launch ${minikitConfig.miniapp.name}`,
+          action: {
+            type: 'launch_miniapp',
+            name: minikitConfig.miniapp.name,
+            url: minikitConfig.miniapp.homeUrl,
+            splashImageUrl: minikitConfig.miniapp.splashImageUrl,
+            splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
+          },
+        },
+      }),
+    },
+  };
 }
 
 export default async function RootLayout({
@@ -33,13 +67,17 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <ClientReownProvider cookies={cookies}>
-          <AuthProvider>
-            <ThirdwebProvider>
-              <SolanaWalletProvider>{children}</SolanaWalletProvider>
-            </ThirdwebProvider>
-          </AuthProvider>
-        </ClientReownProvider>
+        {/* Mini App Wagmi Provider - wraps everything for Base Account support */}
+        <MiniAppWagmiProvider>
+          {/* Keep existing Reown for web users */}
+          <ClientReownProvider cookies={cookies}>
+            <AuthProvider>
+              <ThirdwebProvider>
+                <SolanaWalletProvider>{children}</SolanaWalletProvider>
+              </ThirdwebProvider>
+            </AuthProvider>
+          </ClientReownProvider>
+        </MiniAppWagmiProvider>
       </body>
     </html>
   )
