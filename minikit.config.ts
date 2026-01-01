@@ -1,4 +1,5 @@
-const ROOT_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://blink-tip.vercel.app';
+// Remove trailing slash to prevent double slashes in URLs
+const ROOT_URL = (process.env.NEXT_PUBLIC_BASE_URL || 'https://blink-tip.vercel.app').replace(/\/$/, '');
 
 export const minikitConfig = {
   accountAssociation: {
