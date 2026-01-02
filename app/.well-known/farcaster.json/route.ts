@@ -11,6 +11,7 @@ export async function GET() {
       version: "1",
       name: "BlinkTip",
       iconUrl: `${ROOT_URL}/icon.png`,
+      imageUrl: `${ROOT_URL}/hero.png`,
       splashImageUrl: `${ROOT_URL}/splash.png`,
       splashBackgroundColor: "#8B5CF6",
       homeUrl: ROOT_URL,
