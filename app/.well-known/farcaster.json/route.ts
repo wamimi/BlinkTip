@@ -14,7 +14,9 @@ export async function GET() {
       splashImageUrl: `${ROOT_URL}/splash.png`,
       splashBackgroundColor: "#8B5CF6",
       homeUrl: ROOT_URL,
-      webhookUrl: `${ROOT_URL}/api/webhook`
+      webhookUrl: `${ROOT_URL}/api/webhook`,
+      primaryCategory: "social",
+      tags: ["crypto", "tips", "ai", "agents", "web3"]
     }
   });
 }
