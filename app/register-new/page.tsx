@@ -376,22 +376,24 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Step 2 Card */}
-              <div className={`p-6 rounded-3xl border-2 transition-all duration-300 ${session ? 'bg-blue-50/50 border-blue-500/30 dark:bg-blue-900/10 dark:border-blue-800' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 shadow-lg'} ${!isConnected ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-                <div className="flex items-center gap-5">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl transition-all ${session ? 'bg-blue-500 text-white shadow-blue-500/30 shadow-lg' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400'}`}>2</div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-xl mb-1">Verify Socials</h3>
-                    <p className="text-sm text-gray-500">{session ? `@${session.user.twitterHandle} verified` : 'Link Twitter for trust'}</p>
+              {/* Step 2 Card - Hide in mini app mode */}
+              {!isInMiniApp && (
+                <div className={`p-6 rounded-3xl border-2 transition-all duration-300 ${session ? 'bg-blue-50/50 border-blue-500/30 dark:bg-blue-900/10 dark:border-blue-800' : 'bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 shadow-lg'} ${!isConnected ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                  <div className="flex items-center gap-5">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl transition-all ${session ? 'bg-blue-500 text-white shadow-blue-500/30 shadow-lg' : 'bg-gray-100 dark:bg-zinc-800 text-gray-400'}`}>2</div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-xl mb-1">Verify Socials</h3>
+                      <p className="text-sm text-gray-500">{session ? `@${session.user.twitterHandle} verified` : 'Link Twitter for trust'}</p>
+                    </div>
+                    {session && <div className="text-blue-500 text-xl">✓</div>}
                   </div>
-                  {session && <div className="text-blue-500 text-xl">✓</div>}
+                  {isConnected && !session && (
+                    <button onClick={() => signIn('twitter')} className="mt-6 w-full py-4 bg-[#1DA1F2] text-white rounded-2xl font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-blue-400/20">
+                      Verify with X
+                    </button>
+                  )}
                 </div>
-                {isConnected && !session && (
-                  <button onClick={() => signIn('twitter')} className="mt-6 w-full py-4 bg-[#1DA1F2] text-white rounded-2xl font-bold hover:scale-[1.02] transition-transform shadow-lg shadow-blue-400/20">
-                    Verify with X
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
