@@ -96,6 +96,16 @@ export default function RegisterPage() {
   }
 
   useEffect(() => {
+    // Mini app mode: only use Base wallet, no Solana
+    if (isInMiniApp && miniAppWalletAddress) {
+      if (miniAppWalletAddress !== evmAddress) {
+        setEvmAddress(miniAppWalletAddress)
+        requestEvmSignature(miniAppWalletAddress)
+      }
+      return
+    }
+
+    // Web mode: detect wallets as before
     if (!isConnected) {
       setSolanaAddress('')
       setEvmAddress('')
@@ -152,7 +162,7 @@ export default function RegisterPage() {
     }
 
     detectAddresses()
-  }, [isConnected, address, caipAddress, isSolanaConnection, isEVMConnection])
+  }, [isConnected, address, caipAddress, isSolanaConnection, isEVMConnection, isInMiniApp, miniAppWalletAddress])
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')
