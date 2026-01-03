@@ -174,19 +174,32 @@ export default function RegisterPage() {
     if (!activeConnection || !activeAddress) { setError('Please connect your wallet first'); return }
     if (!name.trim()) { setError('Name is required'); return }
 
-    if (!solanaAddress && !evmAddress) {
-      setError('Could not detect any wallet addresses. Please reconnect your wallet.')
-      return
-    }
+    // In mini app mode, only require EVM address
+    if (isInMiniApp) {
+      if (!evmAddress) {
+        setError('Could not detect Base wallet address. Please reconnect.')
+        return
+      }
+      if (!evmSignature) {
+        setError('Please sign the message with your Base Account first')
+        return
+      }
+    } else {
+      // In web mode, require at least one wallet
+      if (!solanaAddress && !evmAddress) {
+        setError('Could not detect any wallet addresses. Please reconnect your wallet.')
+        return
+      }
 
-    if (solanaAddress && !solanaSignature) {
-      setError('Please sign the message with your Solana wallet first')
-      return
-    }
+      if (solanaAddress && !solanaSignature) {
+        setError('Please sign the message with your Solana wallet first')
+        return
+      }
 
-    if (evmAddress && !evmSignature) {
-      setError('Please sign the message with your EVM wallet first')
-      return
+      if (evmAddress && !evmSignature) {
+        setError('Please sign the message with your EVM wallet first')
+        return
+      }
     }
 
     setLoading(true)
