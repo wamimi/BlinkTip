@@ -7,17 +7,30 @@ import { verifySolanaSignature, verifyEVMSignature } from '@/lib/wallet-verifica
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json()
+    const { evm_wallet_address } = body
+
     // Check authentication
     const session = await getServerSession(authOptions)
-    if (!session?.user?.twitterId) {
+
+    // For mini app (Base Account): wallet signature is sufficient, no Twitter auth needed
+    // For web app: Twitter auth is required
+    const isMiniAppUser = evm_wallet_address && !session?.user?.twitterId
+    const isWebUser = session?.user?.twitterId
+
+    if (!isMiniAppUser && !isWebUser) {
       return NextResponse.json(
-        { error: 'Unauthorized - Twitter authentication required' },
+        { error: 'Unauthorized - Authentication required' },
         { status: 401 }
       )
     }
 
-    // Rate limiting: 5 creator registrations per hour per user
-    const rateLimitResult = await rateLimit(`creator_reg:${session.user.twitterId}`, {
+    // Rate limiting: use wallet address for mini app, Twitter ID for web
+    const rateLimitKey = isMiniAppUser
+      ? `creator_reg:wallet:${evm_wallet_address}`
+      : `creator_reg:tw:${session.user.twitterId}`
+
+    const rateLimitResult = await rateLimit(rateLimitKey, {
       limit: 5,
       windowInSeconds: 3600,
     })
@@ -28,8 +41,6 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       )
     }
-
-    const body = await request.json()
     const {
       slug,
       wallet_address,
