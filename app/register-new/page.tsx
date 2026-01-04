@@ -417,48 +417,62 @@ export default function RegisterPage() {
                     {isInMiniApp ? 'Base Account Address' : 'Detected Wallet Addresses'}
                   </p>
                   <div className="space-y-2 text-sm">
-                    {isInMiniApp && miniAppWalletAddress ? (
-                      <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-2">
-                        <span className="text-blue-600">✓</span>
-                        <span className="font-semibold">⬡ Base:</span>
-                        <span className="font-mono text-xs">
-                          {miniAppWalletAddress.slice(0, 6)}...{miniAppWalletAddress.slice(-4)}
-                        </span>
-                      </div>
-                    ) : null}
-                    {!isInMiniApp && solanaAddress ? (
-                      <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-2">
-                        <span className="text-green-600">✓</span>
-                        <span className="font-semibold">◎ Solana:</span>
-                        <span className="font-mono text-xs">
-                          {solanaAddress.slice(0, 4)}...{solanaAddress.slice(-4)}
-                        </span>
-                      </div>
+                    {/* Mini app mode: only show Base wallet */}
+                    {isInMiniApp ? (
+                      evmAddress ? (
+                        <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-2">
+                          <span className="text-blue-600">✓</span>
+                          <span className="font-semibold">⬡ Base:</span>
+                          <span className="font-mono text-xs">
+                            {evmAddress.slice(0, 6)}...{evmAddress.slice(-4)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-2">
+                          <span className="text-yellow-600">⚠</span>
+                          <span className="text-xs">Base wallet not detected</span>
+                        </div>
+                      )
                     ) : (
-                      <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-2">
-                        <span className="text-yellow-600">⚠</span>
-                        <span className="text-xs">Solana address not detected</span>
-                      </div>
-                    )}
+                      <>
+                        {/* Web mode: show both Solana and EVM */}
+                        {solanaAddress ? (
+                          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-2">
+                            <span className="text-green-600">✓</span>
+                            <span className="font-semibold">◎ Solana:</span>
+                            <span className="font-mono text-xs">
+                              {solanaAddress.slice(0, 4)}...{solanaAddress.slice(-4)}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-2">
+                            <span className="text-yellow-600">⚠</span>
+                            <span className="text-xs">Solana address not detected</span>
+                          </div>
+                        )}
 
-                    {evmAddress ? (
-                      <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-2">
-                        <span className="text-green-600">✓</span>
-                        <span className="font-semibold">⬡ Base:</span>
-                        <span className="font-mono text-xs">
-                          {evmAddress.slice(0, 6)}...{evmAddress.slice(-4)}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-2">
-                        <span className="text-yellow-600">⚠</span>
-                        <span className="text-xs">EVM address not detected</span>
-                      </div>
+                        {evmAddress ? (
+                          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-2">
+                            <span className="text-green-600">✓</span>
+                            <span className="font-semibold">⬡ Base:</span>
+                            <span className="font-mono text-xs">
+                              {evmAddress.slice(0, 6)}...{evmAddress.slice(-4)}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-2">
+                            <span className="text-yellow-600">⚠</span>
+                            <span className="text-xs">EVM address not detected</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-                    Multi-chain wallets like Phantom support both. You can update addresses later in your dashboard.
-                  </p>
+                  {!isInMiniApp && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                      Multi-chain wallets like Phantom support both. You can update addresses later in your dashboard.
+                    </p>
+                  )}
                 </div>
               )}
 
