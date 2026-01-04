@@ -246,6 +246,9 @@ export default function RegisterPage() {
           bio: bio.trim() || undefined,
           avatar_url: avatarUrl.trim() || undefined,
           supported_chains: supportedChains,
+          // Include Farcaster FID if in mini app (both Base App and Farcaster)
+          farcaster_fid: isInMiniApp && miniAppUser?.fid ? miniAppUser.fid : undefined,
+          farcaster_username: isInMiniApp && miniAppUser?.username ? miniAppUser.username : undefined,
           ...twitterData,
         }),
       })
