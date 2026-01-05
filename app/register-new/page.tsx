@@ -102,6 +102,14 @@ export default function RegisterPage() {
     }
   }
 
+  const handleBaseAccountSignIn = (data: { address: string; message: string; signature: string }) => {
+    setBaseAccountAuth(data)
+    setEvmAddress(data.address)
+    setEvmSignature(data.signature)
+    setEvmVerificationMessage(data.message)
+    console.log('✓ Base Account authenticated:', data.address)
+  }
+
   useEffect(() => {
     // Mini app mode: only use Base wallet, no Solana
     if (isInMiniApp && miniAppWalletAddress) {
