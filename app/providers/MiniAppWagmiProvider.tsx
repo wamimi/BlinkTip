@@ -2,11 +2,9 @@
 
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { OnchainKitProvider as OKProvider } from '@coinbase/onchainkit'
 import { wagmiConfig } from '@/config/wagmi'
 import { wagmiConfigMiniApp } from '@/config/wagmi-miniapp'
 import { MiniAppProvider } from '@/context/miniapp'
-import { base } from 'viem/chains'
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { sdk } from '@farcaster/miniapp-sdk'
@@ -40,11 +38,9 @@ export function MiniAppWagmiProvider({ children }: { children: ReactNode }) {
     return (
       <WagmiProvider config={wagmiConfigMiniApp}>
         <QueryClientProvider client={queryClient}>
-          <OKProvider chain={base}>
-            <MiniAppProvider>
-              {children}
-            </MiniAppProvider>
-          </OKProvider>
+          <MiniAppProvider>
+            {children}
+          </MiniAppProvider>
         </QueryClientProvider>
       </WagmiProvider>
     )
