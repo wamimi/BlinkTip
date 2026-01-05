@@ -6,6 +6,7 @@ import type { Provider } from '@reown/appkit-adapter-solana/react'
 import { useSession, signIn } from 'next-auth/react'
 import { useSignMessage } from 'wagmi'
 import { useMiniApp } from '@/context/miniapp'
+import { SignInWithBaseSection } from '@/components/SignInWithBaseSection'
 import Link from 'next/link'
 
 export default function RegisterPage() {
@@ -20,9 +21,16 @@ export default function RegisterPage() {
   const { walletProvider: solanaWalletProvider } = useAppKitProvider<Provider>('solana')
   const { signMessageAsync: signEvmMessage } = useSignMessage()
 
+  // Sign in with Base state (miniapp only)
+  const [baseAccountAuth, setBaseAccountAuth] = useState<{
+    address: string
+    message: string
+    signature: string
+  } | null>(null)
+
   // Determine which wallet to use
-  const activeAddress = isInMiniApp ? miniAppWalletAddress : address
-  const activeConnection = isInMiniApp ? !!miniAppWalletAddress : isConnected
+  const activeAddress = isInMiniApp ? (baseAccountAuth?.address || miniAppWalletAddress) : address
+  const activeConnection = isInMiniApp ? !!baseAccountAuth : isConnected
 
   const [slug, setSlug] = useState('')
   const [name, setName] = useState('')
@@ -93,6 +101,14 @@ export default function RegisterPage() {
       console.error('Failed to sign EVM message:', error)
       setError('You must sign the message to verify EVM wallet ownership')
     }
+  }
+
+  const handleBaseAccountSignIn = (data: { address: string; message: string; signature: string }) => {
+    setBaseAccountAuth(data)
+    setEvmAddress(data.address)
+    setEvmSignature(data.signature)
+    setEvmVerificationMessage(data.message)
+    console.log('✓ Base Account authenticated:', data.address)
   }
 
   useEffect(() => {
@@ -350,7 +366,10 @@ export default function RegisterPage() {
                 Claim your <br/> <span className="text-gradient">Universal Identity</span>
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
-                Create a unified profile to accept crypto from humans and AI agents across Solana, Base, and Celo.
+                {isInMiniApp
+                  ? 'Create your profile to accept crypto from humans and AI agents on Base.'
+                  : 'Create a unified profile to accept crypto from humans and AI agents across Solana, Base, and Celo.'
+                }
               </p>
             </div>
             
@@ -372,9 +391,17 @@ export default function RegisterPage() {
                     Connect Now
                   </button>
                 )}
+                {isInMiniApp && !activeConnection && (
+                  <div className="mt-6">
+                    <SignInWithBaseSection
+                      onSuccess={handleBaseAccountSignIn}
+                      isAuthenticated={!!baseAccountAuth}
+                    />
+                  </div>
+                )}
                 {isInMiniApp && activeConnection && (
                   <div className="mt-4 text-xs text-gray-500 text-center">
-                    ✨ Auto-connected via Base App
+                    ✨ Authenticated with Base Account
                   </div>
                 )}
               </div>
