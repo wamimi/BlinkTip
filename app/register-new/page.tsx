@@ -366,7 +366,10 @@ export default function RegisterPage() {
                 Claim your <br/> <span className="text-gradient">Universal Identity</span>
               </h1>
               <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
-                Create a unified profile to accept crypto from humans and AI agents across Solana, Base, and Celo.
+                {isInMiniApp
+                  ? 'Create your profile to accept crypto from humans and AI agents on Base.'
+                  : 'Create a unified profile to accept crypto from humans and AI agents across Solana, Base, and Celo.'
+                }
               </p>
             </div>
             
