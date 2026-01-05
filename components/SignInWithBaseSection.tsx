@@ -2,6 +2,7 @@
 
 import { SignInWithBaseButton } from '@base-org/account-ui/react'
 import { useSignInWithBase } from '@/hooks/useSignInWithBase'
+import { useState, useEffect } from 'react'
 
 interface SignInWithBaseSectionProps {
   onSuccess: (data: { address: string; message: string; signature: string }) => void
@@ -10,6 +11,23 @@ interface SignInWithBaseSectionProps {
 
 export function SignInWithBaseSection({ onSuccess, isAuthenticated }: SignInWithBaseSectionProps) {
   const { signIn, isLoading, error } = useSignInWithBase()
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsDark(document.documentElement.classList.contains('dark'))
+    }
+
+    checkTheme()
+
+    const observer = new MutationObserver(checkTheme)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+
+    return () => observer.disconnect()
+  }, [])
 
   const handleSignIn = async () => {
     const result = await signIn()
@@ -38,7 +56,7 @@ export function SignInWithBaseSection({ onSuccess, isAuthenticated }: SignInWith
       </div>
 
       <SignInWithBaseButton
-        colorScheme="light"
+        colorScheme={isDark ? 'dark' : 'light'}
         onClick={handleSignIn}
       />
 
