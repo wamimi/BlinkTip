@@ -6,6 +6,7 @@ import type { Provider } from '@reown/appkit-adapter-solana/react'
 import { useSession, signIn } from 'next-auth/react'
 import { useSignMessage } from 'wagmi'
 import { useMiniApp } from '@/context/miniapp'
+import { SignInWithBaseSection } from '@/components/SignInWithBaseSection'
 import Link from 'next/link'
 
 export default function RegisterPage() {
@@ -387,9 +388,17 @@ export default function RegisterPage() {
                     Connect Now
                   </button>
                 )}
+                {isInMiniApp && !activeConnection && (
+                  <div className="mt-6">
+                    <SignInWithBaseSection
+                      onSuccess={handleBaseAccountSignIn}
+                      isAuthenticated={!!baseAccountAuth}
+                    />
+                  </div>
+                )}
                 {isInMiniApp && activeConnection && (
                   <div className="mt-4 text-xs text-gray-500 text-center">
-                    ✨ Auto-connected via Base App
+                    ✨ Authenticated with Base Account
                   </div>
                 )}
               </div>
