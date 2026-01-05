@@ -20,9 +20,16 @@ export default function RegisterPage() {
   const { walletProvider: solanaWalletProvider } = useAppKitProvider<Provider>('solana')
   const { signMessageAsync: signEvmMessage } = useSignMessage()
 
+  // Sign in with Base state (miniapp only)
+  const [baseAccountAuth, setBaseAccountAuth] = useState<{
+    address: string
+    message: string
+    signature: string
+  } | null>(null)
+
   // Determine which wallet to use
-  const activeAddress = isInMiniApp ? miniAppWalletAddress : address
-  const activeConnection = isInMiniApp ? !!miniAppWalletAddress : isConnected
+  const activeAddress = isInMiniApp ? (baseAccountAuth?.address || miniAppWalletAddress) : address
+  const activeConnection = isInMiniApp ? !!baseAccountAuth : isConnected
 
   const [slug, setSlug] = useState('')
   const [name, setName] = useState('')
