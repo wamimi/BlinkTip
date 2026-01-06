@@ -4,9 +4,7 @@ import './globals.css'
 import { SolanaWalletProvider } from './providers/SolanaWalletProvider'
 import { ThirdwebProvider } from './providers/ThirdwebProvider'
 import { AuthProvider } from './providers'
-import { ClientReownProvider } from '@/components/ClientReownProvider'
 import { MiniAppWagmiProvider } from './providers/MiniAppWagmiProvider'
-import { headers } from 'next/headers'
 import { minikitConfig } from '@/minikit.config'
 
 const geistSans = Geist({
@@ -61,22 +59,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const headersObj = await headers()
-  const cookies = headersObj.get('cookie')
-
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* Mini App Wagmi Provider - wraps everything for Base Account support */}
         <MiniAppWagmiProvider>
-          {/* Keep existing Reown for web users */}
-          <ClientReownProvider cookies={cookies}>
-            <AuthProvider>
-              <ThirdwebProvider>
-                <SolanaWalletProvider>{children}</SolanaWalletProvider>
-              </ThirdwebProvider>
-            </AuthProvider>
-          </ClientReownProvider>
+          <AuthProvider>
+            <ThirdwebProvider>
+              <SolanaWalletProvider>{children}</SolanaWalletProvider>
+            </ThirdwebProvider>
+          </AuthProvider>
         </MiniAppWagmiProvider>
       </body>
     </html>

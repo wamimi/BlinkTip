@@ -19,7 +19,7 @@ interface MiniAppContextType {
   error: string | null;
   user: MiniAppUser | null;
   walletAddress: string | null;
-  walletSource: 'base-account' | 'reown' | null;
+  walletSource: 'base-account' | null;
 }
 
 const MiniAppContext = createContext<MiniAppContextType | undefined>(undefined);
@@ -72,7 +72,7 @@ export function MiniAppProvider({ children }: { children: ReactNode }) {
 
   // Determine wallet source and address
   const walletAddress = isInMiniApp ? (baseAccountAddress || null) : null;
-  const walletSource = isInMiniApp ? 'base-account' : 'reown';
+  const walletSource = isInMiniApp ? 'base-account' : null;
 
   return (
     <MiniAppContext.Provider value={{
