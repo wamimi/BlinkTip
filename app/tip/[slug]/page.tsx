@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { useAppKitAccount, useAppKit } from '@reown/appkit/react'
-import { useWalletClient } from 'wagmi'
+import { useWalletClient, useAccount } from 'wagmi'
 import { useMiniApp } from '@/context/miniapp'
 
 // Define Creator Type
@@ -25,9 +24,8 @@ export default function TipPage() {
   // Mini App detection
   const { isInMiniApp, user: miniAppUser, walletAddress: miniAppWalletAddress } = useMiniApp()
 
-  // Existing Reown wallet hooks
-  const { address, isConnected, caipAddress } = useAppKitAccount()
-  const { open } = useAppKit()
+  // Wagmi hooks
+  const { address, isConnected } = useAccount()
   const { data: walletClient } = useWalletClient()
 
   // Determine which wallet to use
@@ -36,15 +34,15 @@ export default function TipPage() {
 
   const [creator, setCreator] = useState<Creator | null>(null)
   const [loading, setLoading] = useState(true)
-  // Default to 'base' when in mini app, 'solana' for web
-  const [selectedChain, setSelectedChain] = useState<'solana' | 'base'>(isInMiniApp ? 'base' : 'solana')
+  const [selectedChain] = useState<'solana' | 'base'>('base')
   const [amount, setAmount] = useState<number | ''>(5)
   const [tipping, setTipping] = useState(false)
   const [txSignature, setTxSignature] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const isEVMConnection = caipAddress?.startsWith('eip155:')
-  const isSolanaConnection = caipAddress?.startsWith('solana:')
+  // Miniapp only supports Base (EVM) but keep logic for both chains for future web app restoration
+  const isEVMConnection = selectedChain === 'base'
+  const isSolanaConnection = selectedChain === 'solana'
 
   useEffect(() => {
     async function fetchCreator() {
@@ -173,6 +171,19 @@ export default function TipPage() {
     }
   }
 
+  if (!isInMiniApp) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
+        <div className="max-w-2xl w-full glass-card rounded-3xl p-10 text-center">
+          <h1 className="text-4xl font-bold mb-4">Under Maintenance</h1>
+          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
+            The web app is currently being upgraded. Please use BlinkTip on Base App or Farcaster to send tips.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (loading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
@@ -198,26 +209,21 @@ export default function TipPage() {
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse-glow" />
       </div>
 
-      {/* Top Navigation with Wallet Button */}
+      {/* Top Navigation */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-lg border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">BlinkTip</span>
             </div>
-            <button
-              onClick={() => open()}
-              className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-sm hover:scale-105 transition-transform shadow-lg"
-            >
-              {isConnected ? (
+            {miniAppWalletAddress && (
+              <div className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-sm">
                 <span className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                  {miniAppWalletAddress.slice(0, 6)}...{miniAppWalletAddress.slice(-4)}
                 </span>
-              ) : (
-                'Connect Wallet'
-              )}
-            </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -241,20 +247,10 @@ export default function TipPage() {
           <h1 className="text-2xl font-bold mb-1 tracking-tight">{creator.name}</h1>
           <p className="text-gray-500 text-sm mb-8 max-w-[280px] mx-auto line-clamp-2 leading-relaxed">{creator.bio}</p>
 
-          {/* Chain Selector */}
-          <div className="bg-zinc-100 dark:bg-zinc-900/50 p-1.5 rounded-xl flex mb-8 border border-zinc-200 dark:border-zinc-800">
-            <button 
-              onClick={() => setSelectedChain('solana')}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${selectedChain === 'solana' ? 'bg-white dark:bg-zinc-800 shadow-sm text-purple-600 scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-            >
-              <span>◎</span> Solana
-            </button>
-            <button 
-              onClick={() => setSelectedChain('base')}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${selectedChain === 'base' ? 'bg-white dark:bg-zinc-800 shadow-sm text-blue-600 scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-            >
-              <span>🔵</span> Base
-            </button>
+          {/* Network Badge */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl flex items-center justify-center gap-2 mb-8 border border-blue-200 dark:border-blue-800">
+            <span className="text-blue-600 text-lg">🔵</span>
+            <span className="text-sm font-bold text-blue-600">Base Network</span>
           </div>
 
           {/* Amount Grid */}
@@ -284,16 +280,13 @@ export default function TipPage() {
           </div>
 
           {/* Action Button */}
-          {!isConnected ? (
-            <button 
-              onClick={() => open()} 
-              className="w-full py-4 bg-black dark:bg-white text-white dark:text-black rounded-2xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg"
-            >
-              Connect Wallet
-            </button>
+          {!miniAppWalletAddress ? (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-2xl text-sm">
+              Please connect your wallet in Base App to send tips
+            </div>
           ) : (
-             <button 
-              onClick={handleTip} 
+             <button
+              onClick={handleTip}
               disabled={tipping}
               className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -319,8 +312,8 @@ export default function TipPage() {
           {txSignature && (
             <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-sm rounded-xl font-medium animate-slide-up border border-green-200 dark:border-green-800">
               <p className="font-bold mb-1">🎉 Payment Successful!</p>
-              <a 
-                href={selectedChain === 'solana' ? `https://explorer.solana.com/tx/${txSignature}?cluster=devnet` : `https://sepolia.basescan.org/tx/${txSignature}`}
+              <a
+                href={`https://sepolia.basescan.org/tx/${txSignature}`}
                 target="_blank"
                 rel="noreferrer"
                 className="underline hover:text-green-800"
