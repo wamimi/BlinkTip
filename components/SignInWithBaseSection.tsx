@@ -48,17 +48,12 @@ export function SignInWithBaseSection({ onSuccess, isAuthenticated }: SignInWith
 
   return (
     <div className="space-y-4">
-      <div className="text-center">
-        <h3 className="text-lg font-bold mb-2">Sign in with Base</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Authenticate with your Base Account to create your tip page
-        </p>
+      <div className="flex flex-col items-center">
+        <SignInWithBaseButton
+          colorScheme={isDark ? 'dark' : 'light'}
+          onClick={handleSignIn}
+        />
       </div>
-
-      <SignInWithBaseButton
-        colorScheme={isDark ? 'dark' : 'light'}
-        onClick={handleSignIn}
-      />
 
       {isLoading && (
         <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
@@ -67,7 +62,7 @@ export function SignInWithBaseSection({ onSuccess, isAuthenticated }: SignInWith
       )}
 
       {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-xl">
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-xl text-center">
           {error}
         </div>
       )}
