@@ -2,9 +2,7 @@
  * Wallet ownership verification via signature
  */
 
-import { PublicKey } from '@solana/web3.js'
 import { verifyMessage } from 'viem'
-import nacl from 'tweetnacl'
 
 export interface VerificationResult {
   valid: boolean
@@ -20,11 +18,17 @@ export async function verifySolanaSignature(
   message: string
 ): Promise<VerificationResult> {
   try {
+    // Dynamic import to avoid bundling Solana deps when not needed
+    const [{ PublicKey }, nacl] = await Promise.all([
+      import('@solana/web3.js'),
+      import('tweetnacl')
+    ])
+
     const publicKey = new PublicKey(walletAddress)
     const signatureBytes = Buffer.from(signature, 'base64')
     const messageBytes = new TextEncoder().encode(message)
 
-    const verified = nacl.sign.detached.verify(
+    const verified = nacl.default.sign.detached.verify(
       messageBytes,
       signatureBytes,
       publicKey.toBytes()
