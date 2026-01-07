@@ -63,10 +63,13 @@ export function useSignInWithBase() {
         // Create SIWE message
         const message = `Sign in to BlinkTip\n\nWallet: ${address}\nNonce: ${nonce}\nTimestamp: ${timestamp}`
 
+        // Convert message to hex format (required by Base Account SDK)
+        const messageHex = `0x${Buffer.from(message, 'utf8').toString('hex')}`
+
         // Sign with personal_sign
         const signature = await baseAccountProvider.request({
           method: 'personal_sign',
-          params: [message, address],
+          params: [messageHex, address],
         }) as string
 
         return { address, message, signature }
