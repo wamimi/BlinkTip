@@ -79,8 +79,19 @@ export default function RegisterPage() {
         }),
       })
 
+      if (!response.ok) {
+        const text = await response.text()
+        let errorMessage = 'Failed to register'
+        try {
+          const data = JSON.parse(text)
+          errorMessage = data.error || errorMessage
+        } catch {
+          errorMessage = `Server error (${response.status}): ${text.substring(0, 100)}`
+        }
+        throw new Error(errorMessage)
+      }
+
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Failed to register')
 
       setSuccess(true)
       setTipLink(data.tip_link)
