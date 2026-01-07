@@ -62,6 +62,13 @@ export default function RegisterPage() {
     setError(null)
 
     try {
+      console.log('Submitting registration:', {
+        slug,
+        name,
+        evm_wallet_address: baseAccountAuth.address,
+        farcaster_fid: miniAppUser?.fid,
+      })
+
       const response = await fetch('/api/creators', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
