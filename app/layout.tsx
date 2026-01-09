@@ -17,50 +17,21 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-// Generate metadata with Mini App embed support
-export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: minikitConfig.miniapp.name,
-    description: minikitConfig.miniapp.description,
-    openGraph: {
-      title: minikitConfig.miniapp.ogTitle,
-      description: minikitConfig.miniapp.ogDescription,
-      images: [minikitConfig.miniapp.ogImageUrl],
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: minikitConfig.miniapp.ogTitle,
-      description: minikitConfig.miniapp.ogDescription,
-      images: [minikitConfig.miniapp.ogImageUrl],
-    },
-    other: {
-      'base:app_id': '694fd0eb4d3a403912ed823c',
-      'fc:miniapp': JSON.stringify({
-        version: 'next',
-        imageUrl: minikitConfig.miniapp.heroImageUrl,
-        button: {
-          title: `Launch ${minikitConfig.miniapp.name}`,
-          action: {
-            type: 'launch_miniapp',
-            name: minikitConfig.miniapp.name,
-            url: minikitConfig.miniapp.homeUrl,
-            splashImageUrl: minikitConfig.miniapp.splashImageUrl,
-            splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
-          },
-        },
-      }),
-    },
-  };
+export const metadata: Metadata = {
+  title: 'BlinkTip | Universal Crypto Tipping',
+  description: 'One link for tips from humans and AI agents on Solana, Base, and Celo.',
+  icons: {
+    icon: '/icon.png',
+  },
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <MiniAppWagmiProvider>
           <AuthProvider>
