@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -28,7 +27,7 @@ body {
   overflow-x: hidden;
 }
 
-/* --- Custom Utilities for Animations & Glassmorphism --- */
+/* Custom Utilities */
 @layer utilities {
   .glass-card {
     @apply bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-white/20 dark:border-zinc-800/50 shadow-xl;
@@ -37,7 +36,6 @@ body {
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500 dark:from-purple-400 dark:to-blue-400;
   }
-
   .animate-fade-in {
     animation: fadeIn 0.8s ease-out forwards;
   }
@@ -46,7 +44,6 @@ body {
     animation: slideUp 0.8s ease-out forwards;
     opacity: 0;
   }
-
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
