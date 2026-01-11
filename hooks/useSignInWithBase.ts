@@ -72,7 +72,8 @@ export function useSignInWithBase() {
           params: [messageHex, address],
         }) as string
 
-        return { address, message, signature }
+        // Return the hex message for verification (must match what was signed)
+        return { address, message: messageHex, signature }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Base'
