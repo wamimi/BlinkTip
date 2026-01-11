@@ -56,9 +56,12 @@ export async function verifyEVMSignature(
   message: string
 ): Promise<VerificationResult> {
   try {
+    // Check if message is hex-encoded (from personal_sign fallback)
+    const isHexMessage = message.startsWith('0x')
+
     const isValid = await verifyMessage({
       address: walletAddress as `0x${string}`,
-      message,
+      message: isHexMessage ? { raw: message as `0x${string}` } : message,
       signature: signature as `0x${string}`,
     })
 
