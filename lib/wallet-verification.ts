@@ -49,6 +49,7 @@ export async function verifySolanaSignature(
 
 /**
  * Verify EVM wallet ownership via signature
+ * Works with SIWE messages from wallet_connect + signInWithEthereum
  */
 export async function verifyEVMSignature(
   walletAddress: string,
@@ -56,12 +57,10 @@ export async function verifyEVMSignature(
   message: string
 ): Promise<VerificationResult> {
   try {
-    // Check if message is hex-encoded (from personal_sign fallback)
-    const isHexMessage = message.startsWith('0x')
-
+    // Verify using viem - handles SIWE messages and ERC-6492 automatically
     const isValid = await verifyMessage({
       address: walletAddress as `0x${string}`,
-      message: isHexMessage ? { raw: message as `0x${string}` } : message,
+      message,
       signature: signature as `0x${string}`,
     })
 
