@@ -73,13 +73,17 @@ export function useSignInWithBase() {
           // Create simple message for personal_sign
           const message = `Sign in to BlinkTip\n\nWallet: ${address}\nNonce: ${nonce}`
 
-          // Sign with personal_sign (provider handles hex encoding)
+          // Hex-encode the message for personal_sign
+          const messageHex = `0x${Buffer.from(message, 'utf8').toString('hex')}`
+
+          // Sign with personal_sign using hex-encoded message
           const signature = await baseAccountProvider.request({
             method: 'personal_sign',
-            params: [message, address],
+            params: [messageHex, address],
           }) as string
 
-          return { address, message, signature }
+          // Return the hex message for verification
+          return { address, message: messageHex, signature }
         }
 
         // Re-throw if it's a different error
