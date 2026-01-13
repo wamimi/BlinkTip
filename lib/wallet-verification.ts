@@ -70,17 +70,13 @@ export async function verifyEVMSignature(
     console.log('[EVM Verification] Signature:', signature.substring(0, 50) + '...')
     console.log('[EVM Verification] Message length:', message.length)
     console.log('[EVM Verification] Message preview:', message.substring(0, 100))
-    console.log('[EVM Verification] Message is hex:', message.startsWith('0x'))
-
-    // Check if message is hex-encoded (from personal_sign fallback)
-    // If hex, use raw format; otherwise use plain text (from wallet_connect SIWE)
-    const isHexMessage = message.startsWith('0x')
 
     // Verify using viem publicClient - handles SIWE messages and ERC-6492 automatically
     // Using publicClient.verifyMessage enables ERC-6492 verification for smart wallet signatures
+    // The message is always plain text (both from wallet_connect SIWE and personal_sign)
     const isValid = await publicClient.verifyMessage({
       address: walletAddress as `0x${string}`,
-      message: isHexMessage ? { raw: message as `0x${string}` } : message,
+      message,
       signature: signature as `0x${string}`,
     })
 
