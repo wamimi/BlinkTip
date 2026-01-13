@@ -57,6 +57,13 @@ export async function verifyEVMSignature(
   message: string
 ): Promise<VerificationResult> {
   try {
+    // Log signature details for debugging
+    console.log('[EVM Verification] Address:', walletAddress)
+    console.log('[EVM Verification] Signature length:', signature.length)
+    console.log('[EVM Verification] Signature:', signature.substring(0, 50) + '...')
+    console.log('[EVM Verification] Message length:', message.length)
+    console.log('[EVM Verification] Message preview:', message.substring(0, 100))
+
     // Verify using viem - handles SIWE messages and ERC-6492 automatically
     const isValid = await verifyMessage({
       address: walletAddress as `0x${string}`,
@@ -64,12 +71,15 @@ export async function verifyEVMSignature(
       signature: signature as `0x${string}`,
     })
 
+    console.log('[EVM Verification] Result:', isValid)
+
     if (!isValid) {
       return { valid: false, error: 'Invalid signature' }
     }
 
     return { valid: true }
   } catch (error) {
+    console.error('[EVM Verification] Error:', error)
     return {
       valid: false,
       error: error instanceof Error ? error.message : 'Verification failed',
