@@ -106,6 +106,16 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Log signature details before verification
+      console.log('[API /api/creators] EVM Wallet Address:', evm_wallet_address)
+      console.log('[API /api/creators] Signature Length:', evm_wallet_signature.length)
+      console.log('[API /api/creators] Signature Type:',
+        evm_wallet_signature.length === 132 ? 'Standard EOA (132 chars)' :
+        evm_wallet_signature.length > 132 ? `Smart Wallet (${evm_wallet_signature.length} chars)` :
+        'Invalid/Unknown'
+      )
+      console.log('[API /api/creators] Message Length:', evm_verification_message.length)
+
       const evmVerification = await verifyEVMSignature(
         evm_wallet_address,
         evm_wallet_signature,
@@ -113,11 +123,14 @@ export async function POST(request: NextRequest) {
       )
 
       if (!evmVerification.valid) {
+        console.error('[API /api/creators] Verification failed:', evmVerification.error)
         return NextResponse.json(
           { error: `EVM wallet verification failed: ${evmVerification.error}` },
           { status: 400 }
         )
       }
+
+      console.log('[API /api/creators] ✅ EVM signature verified successfully')
     }
 
     // Validate slug format
