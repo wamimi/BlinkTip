@@ -2,7 +2,14 @@
  * Wallet ownership verification via signature
  */
 
-import { verifyMessage } from 'viem'
+import { createPublicClient, http, verifyMessage } from 'viem'
+import { baseSepolia } from 'viem/chains'
+
+// Create public client for ERC-6492 smart wallet signature verification
+const publicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(),
+})
 
 export interface VerificationResult {
   valid: boolean
