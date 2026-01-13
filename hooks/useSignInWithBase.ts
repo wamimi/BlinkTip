@@ -24,37 +24,67 @@ export function useSignInWithBase() {
         params: [{ chainId: '0x2105' }],
       })
 
-      // Use wallet_connect with Sign-In with Ethereum (SIWE)
-      // This is the canonical authentication method for Base Account
-      const response = await baseAccountProvider.request({
-        method: 'wallet_connect',
-        params: [
-          {
-            version: '1',
-            capabilities: {
-              signInWithEthereum: {
-                nonce,
-                chainId: '0x2105',
+      // Try wallet_connect with Sign-In with Ethereum (SIWE) first
+      try {
+        const response = await baseAccountProvider.request({
+          method: 'wallet_connect',
+          params: [
+            {
+              version: '1',
+              capabilities: {
+                signInWithEthereum: {
+                  nonce,
+                  chainId: '0x2105',
+                },
               },
             },
-          },
-        ],
-      }) as {
-        accounts: Array<{
-          address: string
-          capabilities: {
-            signInWithEthereum: {
-              message: string
-              signature: string
+          ],
+        }) as {
+          accounts: Array<{
+            address: string
+            capabilities: {
+              signInWithEthereum: {
+                message: string
+                signature: string
+              }
             }
+          }>
+        }
+
+        const { address } = response.accounts[0]
+        const { message, signature } = response.accounts[0].capabilities.signInWithEthereum
+
+        return { address, message, signature }
+      } catch (walletConnectError: any) {
+        // Fallback to personal_sign if wallet_connect is not supported
+        if (walletConnectError.message?.includes('not supported') || walletConnectError.code === -32601) {
+          console.log('wallet_connect not supported, using personal_sign fallback')
+
+          const accounts = await baseAccountProvider.request({
+            method: 'eth_requestAccounts',
+          }) as string[]
+
+          if (!accounts || accounts.length === 0) {
+            throw new Error('No accounts connected')
           }
-        }>
+
+          const address = accounts[0]
+
+          // Create simple message for personal_sign
+          const message = `Sign in to BlinkTip\n\nWallet: ${address}\nNonce: ${nonce}`
+
+          // Sign with personal_sign (provider handles hex encoding)
+          const signature = await baseAccountProvider.request({
+            method: 'personal_sign',
+            params: [message, address],
+          }) as string
+
+          return { address, message, signature }
+        }
+
+        // Re-throw if it's a different error
+        throw walletConnectError
       }
-
-      const { address } = response.accounts[0]
-      const { message, signature } = response.accounts[0].capabilities.signInWithEthereum
-
-      return { address, message, signature }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Base'
       setError(errorMessage)
