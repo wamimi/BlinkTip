@@ -71,8 +71,9 @@ export async function verifyEVMSignature(
     console.log('[EVM Verification] Message length:', message.length)
     console.log('[EVM Verification] Message preview:', message.substring(0, 100))
 
-    // Verify using viem - handles SIWE messages and ERC-6492 automatically
-    const isValid = await verifyMessage({
+    // Verify using viem publicClient - handles SIWE messages and ERC-6492 automatically
+    // Using publicClient.verifyMessage enables ERC-6492 verification for smart wallet signatures
+    const isValid = await publicClient.verifyMessage({
       address: walletAddress as `0x${string}`,
       message,
       signature: signature as `0x${string}`,
