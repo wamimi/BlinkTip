@@ -2,7 +2,7 @@
  * Wallet ownership verification via signature
  */
 
-import { createPublicClient, http, verifyMessage } from 'viem'
+import { createPublicClient, http } from 'viem'
 import { baseSepolia } from 'viem/chains'
 
 // Create public client for ERC-6492 smart wallet signature verification
@@ -73,6 +73,7 @@ export async function verifyEVMSignature(
 
     // Verify using viem publicClient - handles SIWE messages and ERC-6492 automatically
     // Using publicClient.verifyMessage enables ERC-6492 verification for smart wallet signatures
+    // The message is always plain text (both from wallet_connect SIWE and personal_sign)
     const isValid = await publicClient.verifyMessage({
       address: walletAddress as `0x${string}`,
       message,
