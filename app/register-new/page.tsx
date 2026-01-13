@@ -68,6 +68,10 @@ export default function RegisterPage() {
         evm_wallet_address: baseAccountAuth.address,
         farcaster_fid: miniAppUser?.fid,
       })
+      console.log('Signature length:', baseAccountAuth.signature.length)
+      console.log('Signature preview:', baseAccountAuth.signature.substring(0, 66) + '...')
+      console.log('Message length:', baseAccountAuth.message.length)
+      console.log('Message preview:', baseAccountAuth.message.substring(0, 100))
 
       const response = await fetch('/api/creators', {
         method: 'POST',
