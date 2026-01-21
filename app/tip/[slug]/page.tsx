@@ -159,7 +159,11 @@ export default function TipPage() {
             headers: { 'Content-Type': 'application/json', 'x-payment': paymentHeader }
         })
 
-        if (!finalRes.ok) throw new Error('Payment verification failed')
+        if (!finalRes.ok) {
+          const errorData = await finalRes.json()
+          console.error('[x402-Base] Payment failed:', errorData)
+          throw new Error(errorData.reason || errorData.error || 'Payment verification failed')
+        }
         const result = await finalRes.json()
         console.log('[x402-Base] Success:', result)
         if (result.tip?.signature) setTxSignature(result.tip.signature)
