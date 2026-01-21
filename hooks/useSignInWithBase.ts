@@ -18,10 +18,10 @@ export function useSignInWithBase() {
     try {
       const nonce = crypto.randomUUID().replace(/-/g, '')
 
-      // Switch to Base Sepolia
+      // Switch to Base Sepolia (chain ID 84532 = 0x14a34)
       await baseAccountProvider.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x2105' }],
+        params: [{ chainId: '0x14a34' }],
       })
 
       // Try wallet_connect with Sign-In with Ethereum (SIWE) first
@@ -34,7 +34,7 @@ export function useSignInWithBase() {
               capabilities: {
                 signInWithEthereum: {
                   nonce,
-                  chainId: '0x2105',
+                  chainId: '0x14a34',
                 },
               },
             },
