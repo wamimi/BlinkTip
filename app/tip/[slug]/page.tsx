@@ -176,16 +176,16 @@ export default function TipPage() {
         const paymentData = await initRes.json()
         console.log('[x402-Base v2] Payment requirements received:', paymentData)
 
-        // Get the payment requirements (v2 uses 'accepts' array)
-        const paymentRequirement = paymentData.accepts?.[0] || paymentData.paymentRequirements?.[0]
-        if (!paymentRequirement) {
+        // Validate payment requirements exist
+        if (!paymentData.accepts?.[0] && !paymentData.paymentRequirements?.[0]) {
           throw new Error('No payment requirements received')
         }
 
         console.log('[x402-Base v2] Signing payment with wallet...')
 
         // Create payment payload using the client
-        const paymentPayload = await client.createPaymentPayload(paymentRequirement)
+        // Pass the full paymentData object which includes x402Version and accepts array
+        const paymentPayload = await client.createPaymentPayload(paymentData)
 
         // Encode as base64 for the header
         const paymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString('base64')
