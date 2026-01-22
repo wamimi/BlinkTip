@@ -193,7 +193,7 @@ export async function GET(
 
       // Settle the payment
       console.log('[Base x402 v2] Payment verified, settling...')
-      const settleResult = await server.settle(paymentPayload, paymentConfig)
+      const settleResult = await server.settlePayment(paymentPayload, requirement)
       console.log('[Base x402 v2] Settlement result:', settleResult)
 
       if (!settleResult.success) {
