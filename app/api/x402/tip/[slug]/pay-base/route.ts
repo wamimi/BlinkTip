@@ -176,7 +176,11 @@ export async function GET(
 
     // Verify payment using the resource server
     try {
-      const verifyResult = await server.verify(paymentPayload, paymentConfig)
+      // Build proper payment requirements from the config
+      const paymentRequirements = await server.buildPaymentRequirements(paymentConfig)
+      const requirement = paymentRequirements[0]
+
+      const verifyResult = await server.verifyPayment(paymentPayload, requirement)
       console.log('[Base x402 v2] Verification result:', verifyResult)
 
       if (!verifyResult.isValid) {
