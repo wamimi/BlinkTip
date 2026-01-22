@@ -138,34 +138,61 @@ export default function TipPage() {
 
         if (!walletClient) throw new Error('Wallet not connected')
 
-        const { createPaymentHeader } = await import('x402/client')
+        // Import x402 v2 client packages
+        const { x402Client } = await import('@x402/core/client')
+        const { registerExactEvmScheme } = await import('@x402/evm/exact/client')
 
-        console.log('[x402-Base] Getting payment requirements...')
-        console.log('[x402-Base] Tipper address (EVM):', address)
+        console.log('[x402-Base v2] Starting payment flow...')
+        console.log('[x402-Base v2] Tipper address (EVM):', activeAddress)
 
+        // Create x402 client and register EVM scheme with the wallet signer
+        const client = new x402Client()
+        registerExactEvmScheme(client, { signer: walletClient })
+
+        // Get payment requirements from the server
+        console.log('[x402-Base v2] Getting payment requirements...')
         const initRes = await fetch(`/api/x402/tip/${slug}/pay-base?amount=${tipAmount}&token=USDC`)
-        if (initRes.status !== 402) throw new Error('Payment initialization failed')
+
+        if (initRes.status !== 402) {
+          throw new Error('Payment initialization failed')
+        }
+
         const paymentData = await initRes.json()
+        console.log('[x402-Base v2] Payment requirements received:', paymentData)
 
-        console.log('[x402-Base] Payment requirements received')
-        console.log('[x402-Base] Signing payment with wallet...')
+        // Get the payment requirements (v2 uses 'accepts' array)
+        const paymentRequirement = paymentData.accepts?.[0] || paymentData.paymentRequirements?.[0]
+        if (!paymentRequirement) {
+          throw new Error('No payment requirements received')
+        }
 
-        const paymentHeader = await createPaymentHeader(walletClient as any, 1, paymentData.paymentRequirements[0])
+        console.log('[x402-Base v2] Signing payment with wallet...')
 
-        console.log('[x402-Base] Payment signed, submitting...')
+        // Create payment payload using the client
+        const paymentPayload = await client.createPayment(paymentRequirement)
+
+        // Encode as base64 for the header
+        const paymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString('base64')
+
+        console.log('[x402-Base v2] Payment signed, submitting...')
 
         const finalRes = await fetch(`/api/x402/tip/${slug}/pay-base?amount=${tipAmount}&token=USDC`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json', 'x-payment': paymentHeader }
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-payment': paymentHeader,
+            'payment-signature': paymentHeader,
+          }
         })
 
         if (!finalRes.ok) {
           const errorData = await finalRes.json()
-          console.error('[x402-Base] Payment failed:', errorData)
+          console.error('[x402-Base v2] Payment failed:', errorData)
           throw new Error(errorData.reason || errorData.error || 'Payment verification failed')
         }
+
         const result = await finalRes.json()
-        console.log('[x402-Base] Success:', result)
+        console.log('[x402-Base v2] Success:', result)
         if (result.tip?.signature) setTxSignature(result.tip.signature)
       }
     } catch (err) {
@@ -328,7 +355,7 @@ export default function TipPage() {
           )}
           
           <div className="mt-8 flex items-center justify-center gap-2 opacity-40 hover:opacity-60 transition-opacity">
-             <span className="text-xs font-mono text-gray-500">SECURED BY x402 PROTOCOL</span>
+             <span className="text-xs font-mono text-gray-500">SECURED BY x402 PROTOCOL v2</span>
           </div>
 
         </div>
