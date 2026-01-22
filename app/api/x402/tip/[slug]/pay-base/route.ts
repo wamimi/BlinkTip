@@ -125,6 +125,10 @@ export async function GET(
     console.log('[Base x402 v2] Payment config:', JSON.stringify(paymentConfig, null, 2))
     console.log('[Base x402 v2] Using facilitator:', TESTNET_FACILITATOR_URL)
 
+    // Build proper payment requirements with EIP-712 domain parameters
+    const paymentRequirements = await server.buildPaymentRequirements(paymentConfig)
+    console.log('[Base x402 v2] Built payment requirements:', JSON.stringify(paymentRequirements, null, 2))
+
     // Check if payment header exists (x-payment or payment-signature)
     const paymentHeader = request.headers.get('x-payment') || request.headers.get('payment-signature')
 
@@ -132,19 +136,15 @@ export async function GET(
       // Return 402 with payment requirements
       console.log('[Base x402 v2] No payment header, returning 402')
 
-      const accepts = [paymentConfig]
-
       return NextResponse.json(
         {
           x402Version: 2,
-          accepts,
-          // Also include legacy format for compatibility
-          paymentRequirements: accepts,
+          accepts: paymentRequirements,
         },
         {
           status: 402,
           headers: {
-            'PAYMENT-REQUIRED': JSON.stringify({ accepts }),
+            'PAYMENT-REQUIRED': JSON.stringify({ accepts: paymentRequirements }),
           }
         }
       )
@@ -176,8 +176,7 @@ export async function GET(
 
     // Verify payment using the resource server
     try {
-      // Build proper payment requirements from the config
-      const paymentRequirements = await server.buildPaymentRequirements(paymentConfig)
+      // Use the already-built payment requirements
       const requirement = paymentRequirements[0]
 
       const verifyResult = await server.verifyPayment(paymentPayload, requirement)
