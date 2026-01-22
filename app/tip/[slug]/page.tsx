@@ -185,7 +185,7 @@ export default function TipPage() {
         console.log('[x402-Base v2] Signing payment with wallet...')
 
         // Create payment payload using the client
-        const paymentPayload = await client.createPayment(paymentRequirement)
+        const paymentPayload = await client.createPaymentPayload(paymentRequirement)
 
         // Encode as base64 for the header
         const paymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString('base64')
