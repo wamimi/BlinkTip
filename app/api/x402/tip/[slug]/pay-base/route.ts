@@ -48,6 +48,9 @@ export async function GET(
   const { slug } = await params
 
   try {
+    // Initialize the server on first request
+    await ensureServerInitialized()
+
     // Rate limiting: 20 payment requests per minute per IP
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     const rateLimitResult = await rateLimit(`x402_base:${ip}`, {
