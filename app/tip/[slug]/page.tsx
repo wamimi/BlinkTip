@@ -146,8 +146,21 @@ export default function TipPage() {
         console.log('[x402-Base v2] Tipper address (EVM):', activeAddress)
 
         // Create x402 client and register EVM scheme with the wallet signer
+        // Adapt wagmi walletClient to x402's ClientEvmSigner interface
+        const signer = {
+          address: walletClient.account.address as `0x${string}`,
+          signTypedData: async (params: { domain: Record<string, unknown>; types: Record<string, unknown>; primaryType: string; message: Record<string, unknown> }) => {
+            return walletClient.signTypedData({
+              account: walletClient.account,
+              domain: params.domain as any,
+              types: params.types as any,
+              primaryType: params.primaryType,
+              message: params.message as any,
+            })
+          }
+        }
         const client = new x402Client()
-        registerExactEvmScheme(client, { signer: walletClient })
+        registerExactEvmScheme(client, { signer })
 
         // Get payment requirements from the server
         console.log('[x402-Base v2] Getting payment requirements...')
