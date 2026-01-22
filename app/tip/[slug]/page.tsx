@@ -152,9 +152,12 @@ export default function TipPage() {
           signTypedData: async (params: { domain: Record<string, unknown>; types: Record<string, unknown>; primaryType: string; message: Record<string, unknown> }) => {
             return walletClient.signTypedData({
               account: walletClient.account,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               domain: params.domain as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               types: params.types as any,
               primaryType: params.primaryType,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               message: params.message as any,
             })
           }
