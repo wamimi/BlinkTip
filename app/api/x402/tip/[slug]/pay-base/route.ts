@@ -36,8 +36,15 @@ const server = new x402ResourceServer(facilitatorClient)
 let serverInitialized = false
 async function ensureServerInitialized() {
   if (!serverInitialized) {
-    await server.initialize()
-    serverInitialized = true
+    console.log('[Base x402 v2] Initializing server...')
+    try {
+      await server.initialize()
+      serverInitialized = true
+      console.log('[Base x402 v2] Server initialized successfully')
+    } catch (initError) {
+      console.error('[Base x402 v2] Server initialization failed:', initError)
+      throw initError
+    }
   }
 }
 
