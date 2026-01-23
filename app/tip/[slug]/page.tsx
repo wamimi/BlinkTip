@@ -174,11 +174,34 @@ export default function TipPage() {
         }
 
         const paymentData = await initRes.json()
-        console.log('[x402-Base v2] Payment requirements received:', paymentData)
+        console.log('[x402-Base v2] Payment requirements received:', JSON.stringify(paymentData, null, 2))
+
+        // Debug: Log the first requirement's fields
+        const firstReq = paymentData.accepts?.[0]
+        if (firstReq) {
+          console.log('[x402-Base v2] First requirement details:', {
+            scheme: firstReq.scheme,
+            network: firstReq.network,
+            asset: firstReq.asset,
+            amount: firstReq.amount,
+            extra: firstReq.extra,
+            hasName: !!firstReq.extra?.name,
+            hasVersion: !!firstReq.extra?.version,
+          })
+        } else {
+          console.error('[x402-Base v2] No accepts array in response!')
+        }
 
         // Validate payment requirements exist
         if (!paymentData.accepts?.[0] && !paymentData.paymentRequirements?.[0]) {
           throw new Error('No payment requirements received')
+        }
+
+        // Validate required fields are present
+        const requirement = paymentData.accepts?.[0]
+        if (requirement && (!requirement.extra?.name || !requirement.extra?.version)) {
+          console.error('[x402-Base v2] Missing EIP-712 domain params in requirement:', requirement)
+          throw new Error(`Server returned incomplete payment requirements: missing EIP-712 domain parameters (name=${requirement.extra?.name}, version=${requirement.extra?.version})`)
         }
 
         console.log('[x402-Base v2] Signing payment with wallet...')
