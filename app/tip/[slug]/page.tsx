@@ -266,7 +266,7 @@ export default function TipPage() {
   if (!creator) return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center">
       <div className="text-center">
-        <h1 className="text-2xl font-bold mb-2">Creator Not Found</h1>
+        <h1 className="text-2xl font-bold mb-3">Creator Not Found</h1>
         <p className="text-gray-500">Check the URL and try again.</p>
       </div>
     </div>
