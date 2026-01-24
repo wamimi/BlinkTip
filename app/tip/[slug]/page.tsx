@@ -15,7 +15,7 @@ type Creator = {
   evm_wallet_address?: string
 }
 
-const TIP_AMOUNTS = [1, 5, 10, 20]
+const TIP_AMOUNTS = [1, 2, 5, 10]
 
 export default function TipPage() {
   const params = useParams()
