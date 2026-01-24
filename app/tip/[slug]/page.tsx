@@ -344,7 +344,7 @@ export default function TipPage() {
               value={amount} 
               onChange={(e) => setAmount(Number(e.target.value))}
               className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl py-5 pl-10 pr-4 text-center font-bold text-3xl outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder:text-gray-300"
-              placeholder="0.00"
+              placeholder="0"
             />
             <div className="absolute right-6 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400 bg-zinc-200 dark:bg-zinc-800 px-2 py-1 rounded">USDC</div>
           </div>
