@@ -394,7 +394,7 @@ export default function TipPage() {
           )}
           
           <div className="mt-8 flex items-center justify-center gap-2 opacity-40 hover:opacity-60 transition-opacity">
-             <span className="text-xs font-mono text-gray-500">SECURED BY x402 PROTOCOL v2</span>
+             <span className="text-xs font-mono text-gray-500">Powered by x402 Protocol</span>
           </div>
 
         </div>
