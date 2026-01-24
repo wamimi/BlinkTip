@@ -381,7 +381,7 @@ export default function TipPage() {
           {/* Success Message */}
           {txSignature && (
             <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-sm rounded-xl font-medium animate-slide-up border border-green-200 dark:border-green-800">
-              <p className="font-bold mb-1">🎉 Payment Successful!</p>
+              <p className="font-bold mb-2">Payment Successful!</p>
               <a
                 href={`https://sepolia.basescan.org/tx/${txSignature}`}
                 target="_blank"
