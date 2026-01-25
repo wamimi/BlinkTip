@@ -363,7 +363,7 @@ export default function TipPage() {
               {tipping ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Processing...
+                  Sending tip...
                 </span>
               ) : (
                 `Send $${amount || '0'} Tip`
