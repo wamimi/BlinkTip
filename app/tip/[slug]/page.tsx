@@ -388,7 +388,7 @@ export default function TipPage() {
                 rel="noreferrer"
                 className="underline hover:text-green-800"
               >
-                View Transaction
+                View on BaseScan
               </a>
             </div>
           )}
