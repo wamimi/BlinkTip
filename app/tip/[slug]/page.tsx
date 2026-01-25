@@ -302,7 +302,7 @@ export default function TipPage() {
         
         {/* Creator Header - Gradient Banner */}
         <div className="relative h-36 bg-gradient-to-br from-purple-600 via-purple-500 to-blue-600">
-          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
+          <div className="absolute -bottom-14 left-1/2 -translate-x-1/2">
             <div className="p-1.5 bg-white dark:bg-black rounded-full shadow-xl">
               <img 
                 src={creator.avatar_url || `https://ui-avatars.com/api/?name=${creator.name}`} 
