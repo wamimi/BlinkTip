@@ -352,7 +352,7 @@ export default function TipPage() {
           {/* Action Button */}
           {!miniAppWalletAddress ? (
             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-2xl text-sm">
-              Please connect your wallet in Base App to send tips
+              Connect your wallet in Base App to send tips
             </div>
           ) : (
              <button
