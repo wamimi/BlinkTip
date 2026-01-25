@@ -313,7 +313,7 @@ export default function TipPage() {
           </div>
         </div>
 
-        <div className="pt-16 pb-8 px-8 text-center">
+        <div className="pt-18 pb-8 px-8 text-center">
           <h1 className="text-2xl font-bold mb-2 tracking-tight">{creator.name}</h1>
           <p className="text-gray-500 text-sm mb-8 max-w-[280px] mx-auto line-clamp-2 leading-relaxed">{creator.bio}</p>
 
