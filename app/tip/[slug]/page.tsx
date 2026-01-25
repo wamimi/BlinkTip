@@ -306,7 +306,7 @@ export default function TipPage() {
             <div className="p-1.5 bg-white dark:bg-black rounded-full shadow-xl">
               <img 
                 src={creator.avatar_url || `https://ui-avatars.com/api/?name=${creator.name}`} 
-                className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-black bg-gray-200"
+                className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-black bg-gray-100"
                 alt={creator.name} 
               />
             </div>
