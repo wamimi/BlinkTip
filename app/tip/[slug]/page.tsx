@@ -320,7 +320,7 @@ export default function TipPage() {
           {/* Network Badge */}
           <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl flex items-center justify-center gap-2 mb-8 border border-blue-200 dark:border-blue-800">
             <span className="text-blue-500 text-lg">🔵</span>
-            <span className="text-sm font-bold text-blue-600">Base Network</span>
+            <span className="text-sm font-semibold text-blue-600">Base Sepolia</span>
           </div>
 
           {/* Amount Grid */}
