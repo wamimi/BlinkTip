@@ -277,6 +277,7 @@ export default function TipPage() {
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-purple-600/10 rounded-full blur-[120px] animate-pulse-glow" />
+        <div className="absolute bottom-[-30%] right-[-10%] w-[600px] h-[600px] bg-blue-500/8 rounded-full blur-[100px]" />
       </div>
 
       {/* Top Navigation */}
