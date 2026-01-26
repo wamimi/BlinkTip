@@ -320,9 +320,9 @@ export default function TipPage() {
           <p className="text-gray-500 text-sm mb-8 max-w-[280px] mx-auto line-clamp-2 leading-relaxed">{creator.bio}</p>
 
           {/* Network Badge */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl flex items-center justify-center gap-2 mb-8 border border-blue-200 dark:border-blue-800">
-            <span className="text-blue-500 text-lg">🔵</span>
-            <span className="text-sm font-semibold text-blue-600">Base Sepolia</span>
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-3 rounded-xl flex items-center justify-center gap-2 mb-8 border border-blue-200/50 dark:border-blue-800/50 backdrop-blur-sm">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Base Sepolia Testnet</span>
           </div>
 
           {/* Amount Grid */}
