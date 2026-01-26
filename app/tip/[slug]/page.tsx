@@ -360,7 +360,7 @@ export default function TipPage() {
              <button
               onClick={handleTip}
               disabled={tipping}
-              className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl font-bold text-lg hover:scale-[1.02] transition-transform shadow-lg shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-gradient-to-r from-purple-600 via-purple-500 to-blue-600 text-white rounded-2xl font-bold text-lg hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
             >
               {tipping ? (
                 <span className="flex items-center justify-center gap-2">
