@@ -331,7 +331,7 @@ export default function TipPage() {
               <button
                 key={amt}
                 onClick={() => setAmount(amt)}
-                className={`py-3 rounded-xl font-bold transition-all border ${amount === amt ? 'border-purple-500 bg-purple-500/10 text-purple-600' : 'border-zinc-200 dark:border-zinc-800 hover:border-purple-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900/30'}`}
+                className={`py-3 rounded-xl font-bold transition-all duration-200 border ${amount === amt ? 'border-purple-500 bg-gradient-to-br from-purple-500/20 to-blue-500/10 text-purple-600 scale-105 shadow-md' : 'border-zinc-200 dark:border-zinc-800 hover:border-purple-300 dark:hover:border-zinc-600 bg-white dark:bg-zinc-900/30 hover:scale-102'}`}
               >
                 ${amt}
               </button>
