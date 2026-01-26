@@ -302,7 +302,8 @@ export default function TipPage() {
       <div className="relative w-full max-w-md glass-card rounded-[2rem] overflow-hidden animate-slide-up border border-white/20 dark:border-zinc-800 shadow-2xl mt-16">
         
         {/* Creator Header - Gradient Banner */}
-        <div className="relative h-36 bg-gradient-to-br from-purple-600 via-purple-500 to-blue-600">
+        <div className="relative h-36 bg-gradient-to-br from-purple-600 via-indigo-500 to-blue-500 overflow-hidden">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50" />
           <div className="absolute -bottom-14 left-1/2 -translate-x-1/2">
             <div className="p-1 bg-white dark:bg-black rounded-full shadow-xl">
               <img 
