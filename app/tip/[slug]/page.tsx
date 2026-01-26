@@ -417,8 +417,11 @@ export default function TipPage() {
             </div>
           )}
           
-          <div className="mt-8 flex items-center justify-center gap-2 opacity-40 hover:opacity-60 transition-opacity">
-             <span className="text-xs font-mono text-gray-500">Powered by x402 Protocol</span>
+          <div className="mt-8 pt-6 border-t border-zinc-200/50 dark:border-zinc-800/50">
+            <div className="flex items-center justify-center gap-2 opacity-50 hover:opacity-80 transition-opacity">
+              <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              <span className="text-xs font-mono text-gray-500">Powered by x402 Protocol</span>
+            </div>
           </div>
 
         </div>
