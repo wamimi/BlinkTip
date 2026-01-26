@@ -348,7 +348,10 @@ export default function TipPage() {
               className="w-full bg-white dark:bg-zinc-900/80 border-2 border-zinc-200 dark:border-zinc-700 rounded-2xl py-5 pl-12 pr-20 text-center font-bold text-3xl outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-300 shadow-inner"
               placeholder="0"
             />
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400 bg-zinc-200 dark:bg-zinc-800 px-2 py-1 rounded">USDC</div>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-gradient-to-r from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-800/30 px-3 py-1.5 rounded-lg border border-blue-200/50 dark:border-blue-700/50">
+              <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[8px] text-white font-bold">$</div>
+              <span className="text-xs font-bold text-blue-600 dark:text-blue-400">USDC</span>
+            </div>
           </div>
 
           {/* Action Button */}
