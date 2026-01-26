@@ -388,15 +388,21 @@ export default function TipPage() {
 
           {/* Success Message */}
           {txSignature && (
-            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-sm rounded-xl font-medium animate-slide-up border border-green-200 dark:border-green-800">
-              <p className="font-bold mb-2">Payment Successful!</p>
+            <div className="mt-4 p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/20 text-green-700 dark:text-green-300 text-sm rounded-xl font-medium animate-slide-up border border-green-200/50 dark:border-green-700/50 shadow-lg shadow-green-500/10">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <p className="font-bold">Payment Successful!</p>
+              </div>
               <a
                 href={`https://sepolia.basescan.org/tx/${txSignature}`}
                 target="_blank"
                 rel="noreferrer"
-                className="underline hover:text-green-800"
+                className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 underline underline-offset-2"
               >
                 View on BaseScan
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
               </a>
             </div>
           )}
