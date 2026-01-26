@@ -356,8 +356,13 @@ export default function TipPage() {
 
           {/* Action Button */}
           {!miniAppWalletAddress ? (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 rounded-2xl text-sm">
-              Connect your wallet in Base App to send tips
+            <div className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 text-amber-700 dark:text-amber-400 rounded-2xl text-sm border border-amber-200/50 dark:border-amber-700/50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <span>Connect your wallet in Base App to send tips</span>
+              </div>
             </div>
           ) : (
              <button
