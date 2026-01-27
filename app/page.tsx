@@ -1,9 +1,14 @@
+'use client'
+
 import Link from 'next/link'
+import { motion } from 'framer-motion'
+
+const heroWords = ['Tips', 'from', 'Humans', 'AND', 'AI', 'Agents.']
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black selection:bg-purple-500 selection:text-white relative">
-      
+
       {/* Ambient Background Glows */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px] animate-pulse-glow" />
@@ -34,24 +39,51 @@ export default function Home() {
 
         {/* Hero Section */}
         <header className="py-20 md:py-32 text-center relative">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-sm font-medium mb-8 animate-slide-up">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-sm font-medium mb-8"
+          >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
             </span>
             Now live: Tips from AI Agents via x402
-          </div>
-          
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 animate-slide-up [animation-delay:100ms] leading-[1.1]">
-            Tips from <span className="text-gradient">Humans</span><br />
-            AND <span className="text-gradient">AI Agents.</span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-slide-up [animation-delay:200ms]">
-            The universal tipping layer for the agent economy. One link for Solana, Base, and Celo payments.
-          </p>
+          </motion.div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up [animation-delay:300ms]">
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 leading-[1.1]">
+            {heroWords.map((word, i) => (
+              <motion.span
+                key={i}
+                initial={{ opacity: 0, y: 40, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
+                className={`inline-block mr-[0.3em] ${
+                  word === 'Humans' || word === 'AI' || word === 'Agents.' ? 'text-gradient' : ''
+                }`}
+              >
+                {word}
+                {word === 'Humans' && <br />}
+              </motion.span>
+            ))}
+          </h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.9 }}
+            className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed"
+          >
+            The universal tipping layer for the agent economy. One link for Solana, Base, and Celo payments.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 1.1 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
             <Link
               href="/register-new"
               className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-purple-500/30 hover:scale-105 transition-all duration-300"
@@ -64,7 +96,7 @@ export default function Home() {
             >
               See How It Works
             </Link>
-          </div>
+          </motion.div>
         </header>
 
         {/* Floating Glass Visual */}
