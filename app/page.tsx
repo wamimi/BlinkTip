@@ -131,8 +131,20 @@ export default function Home() {
           </motion.div>
         </header>
 
-        {/* Floating Glass Visual */}
-        <div className="relative mx-auto max-w-4xl mb-32 animate-float pointer-events-none">
+        {/* Floating Glass Visual with 3D Tilt */}
+        <motion.div
+          initial={{ opacity: 0, y: 60, rotateX: 10 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ duration: 1, delay: 1.3, ease: 'easeOut' }}
+          whileHover={{
+            rotateY: 5,
+            rotateX: -5,
+            scale: 1.02,
+            transition: { duration: 0.4 },
+          }}
+          style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+          className="relative mx-auto max-w-4xl mb-32"
+        >
           <div className="glass-card rounded-3xl p-2 transform rotate-1">
             <div className="bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-black rounded-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
               {/* Fake Browser Header */}
@@ -147,33 +159,49 @@ export default function Home() {
                 </div>
                 <div className="w-4" />
               </div>
-              
+
               {/* Fake Content */}
               <div className="p-12 md:p-16 text-center">
-                 <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full mx-auto mb-6 shadow-xl ring-4 ring-white dark:ring-black" />
-                 <h3 className="text-3xl font-bold mb-2">Nelly CyberPro</h3>
-                 <p className="text-gray-500 mb-10">Building the future of AI payments.</p>
-                 
-                 <div className="flex flex-wrap justify-center gap-4">
-                    <div className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-purple-500/20 bg-purple-500/5 text-purple-700 dark:text-purple-300 font-bold shadow-sm">
-                      <span className="text-xl">⚡</span> 
-                      <div>
-                        <div className="text-xs opacity-70 uppercase tracking-wide">Received</div>
-                        5.00 USDC (Solana)
-                      </div>
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full mx-auto mb-6 shadow-xl ring-4 ring-white dark:ring-black"
+                />
+                <h3 className="text-3xl font-bold mb-2">Nelly CyberPro</h3>
+                <p className="text-gray-500 mb-10">Building the future of AI payments.</p>
+
+                <div className="flex flex-wrap justify-center gap-4">
+                  <motion.div
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.8, duration: 0.5 }}
+                    className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-purple-500/20 bg-purple-500/5 text-purple-700 dark:text-purple-300 font-bold shadow-sm"
+                  >
+                    <span className="text-xl">⚡</span>
+                    <div>
+                      <div className="text-xs opacity-70 uppercase tracking-wide">Received</div>
+                      5.00 USDC (Solana)
                     </div>
-                    <div className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 text-blue-700 dark:text-blue-300 font-bold shadow-sm">
-                      <span className="text-xl">🤖</span> 
-                      <div>
-                        <div className="text-xs opacity-70 uppercase tracking-wide">AI Agent Tip</div>
-                        2.50 USDC (Base)
-                      </div>
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 2.0, duration: 0.5 }}
+                    className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-blue-500/20 bg-blue-500/5 text-blue-700 dark:text-blue-300 font-bold shadow-sm"
+                  >
+                    <span className="text-xl">🤖</span>
+                    <div>
+                      <div className="text-xs opacity-70 uppercase tracking-wide">AI Agent Tip</div>
+                      2.50 USDC (Base)
                     </div>
-                 </div>
+                  </motion.div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+          {/* Reflection glow beneath card */}
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-16 bg-purple-500/10 blur-[40px] rounded-full" />
+        </motion.div>
 
         {/* Features Grid */}
         <section id="how-it-works" className="mb-32">
