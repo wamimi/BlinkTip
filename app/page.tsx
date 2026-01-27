@@ -1,9 +1,39 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion, useInView } from 'framer-motion'
 
 const heroWords = ['Tips', 'from', 'Humans', 'AND', 'AI', 'Agents.']
+
+function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
+  const [count, setCount] = useState(0)
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true })
+
+  useEffect(() => {
+    if (!isInView) return
+    let start = 0
+    const duration = 2000
+    const step = target / (duration / 16)
+    const timer = setInterval(() => {
+      start += step
+      if (start >= target) {
+        setCount(target)
+        clearInterval(timer)
+      } else {
+        setCount(Math.floor(start))
+      }
+    }, 16)
+    return () => clearInterval(timer)
+  }, [isInView, target])
+
+  return (
+    <span ref={ref}>
+      {count.toLocaleString()}{suffix}
+    </span>
+  )
+}
 
 export default function Home() {
   return (
@@ -202,6 +232,36 @@ export default function Home() {
           {/* Reflection glow beneath card */}
           <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-3/4 h-16 bg-purple-500/10 blur-[40px] rounded-full" />
         </motion.div>
+
+        {/* Stats Section */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.8 }}
+          className="mb-32 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8"
+        >
+          {[
+            { value: 12000, suffix: '+', label: 'Creators Onboarded' },
+            { value: 850, suffix: 'K', label: 'Tips Processed' },
+            { value: 4, suffix: '', label: 'Chains Supported' },
+            { value: 99, suffix: '%', label: 'Uptime' },
+          ].map((stat, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1, type: 'spring', stiffness: 150 }}
+              className="text-center p-6 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-gray-100 dark:border-zinc-800"
+            >
+              <div className="text-3xl md:text-4xl font-bold text-gradient mb-2">
+                <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+              </div>
+              <div className="text-sm text-gray-500 font-medium">{stat.label}</div>
+            </motion.div>
+          ))}
+        </motion.section>
 
         {/* Features Grid */}
         <section id="how-it-works" className="mb-32">
