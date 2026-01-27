@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { motion, useInView, useMotionValue, useSpring } from 'framer-motion'
+import { motion, useInView, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion'
 
 const heroWords = ['Tips', 'from', 'Humans', 'AND', 'AI', 'Agents.']
 
@@ -87,9 +87,26 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 
 export default function Home() {
   const spotlight = useMouseSpotlight()
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 })
+  const progressGradient = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    [
+      'linear-gradient(to right, #9333ea, #7c3aed)',
+      'linear-gradient(to right, #9333ea, #3b82f6)',
+      'linear-gradient(to right, #9333ea, #3b82f6, #06b6d4)',
+    ]
+  )
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black selection:bg-purple-500 selection:text-white relative">
+
+      {/* Scroll Progress Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1 z-50 origin-left"
+        style={{ scaleX, background: progressGradient }}
+      />
 
       {/* Mouse-follow spotlight */}
       <motion.div
