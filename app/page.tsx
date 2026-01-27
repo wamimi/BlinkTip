@@ -574,6 +574,69 @@ export default function Home() {
           </div>
         </motion.section>
       </div>
+
+      {/* Footer */}
+      <footer className="relative border-t border-gray-200 dark:border-zinc-800">
+        {/* Wave SVG divider */}
+        <div className="absolute -top-px left-0 w-full overflow-hidden leading-none rotate-180">
+          <svg className="relative block w-full h-12" viewBox="0 0 1200 60" preserveAspectRatio="none">
+            <path d="M0,0 C300,60 900,0 1200,60 L1200,0 L0,0 Z" className="fill-zinc-50 dark:fill-black" />
+          </svg>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col md:flex-row items-center justify-between gap-8"
+          >
+            {/* Logo & tagline */}
+            <div className="flex flex-col items-center md:items-start gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-tr from-purple-600 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-purple-500/20">
+                  B
+                </div>
+                <span className="text-lg font-bold">BlinkTip</span>
+              </div>
+              <p className="text-sm text-gray-500 text-center md:text-left">The tipping layer for humans & AI agents.</p>
+            </div>
+
+            {/* Social / links */}
+            <div className="flex items-center gap-4">
+              {[
+                { label: 'X / Twitter', href: '#' },
+                { label: 'GitHub', href: '#' },
+                { label: 'Discord', href: '#' },
+                { label: 'Docs', href: '#' },
+              ].map((link, i) => (
+                <motion.a
+                  key={i}
+                  href={link.href}
+                  whileHover={{ y: -2, scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white bg-gray-100 dark:bg-zinc-900 rounded-full border border-gray-200 dark:border-zinc-800 transition-colors"
+                >
+                  {link.label}
+                </motion.a>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="mt-12 pt-8 border-t border-gray-200 dark:border-zinc-800 text-center"
+          >
+            <p className="text-xs text-gray-400">
+              Built with x402 protocol. Payments secured by blockchain.
+            </p>
+          </motion.div>
+        </div>
+      </footer>
     </div>
   )
 }
