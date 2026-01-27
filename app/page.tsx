@@ -17,25 +17,57 @@ export default function Home() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-6">
         {/* Navbar */}
-        <nav className="flex items-center justify-between py-8 animate-fade-in">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/20">
-              B
-            </div>
-            <span className="text-2xl font-bold tracking-tight">BlinkTip</span>
-          </div>
-          <div className="flex items-center gap-4 md:gap-8">
-            <Link href="/login" className="hidden md:block text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
-              Sign In
-            </Link>
-            <Link
-              href="/register-new"
-              className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-full font-bold text-sm hover:scale-105 transition-transform duration-200 shadow-xl"
+        <motion.nav
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="flex items-center justify-between py-8"
+        >
+          <motion.div
+            className="flex items-center gap-3"
+            whileHover={{ scale: 1.02 }}
+          >
+            <motion.div
+              initial={{ rotate: -180, scale: 0 }}
+              animate={{ rotate: 0, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+              className="w-10 h-10 bg-gradient-to-tr from-purple-600 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-purple-500/20"
             >
-              Get Started
-            </Link>
+              B
+            </motion.div>
+            <motion.span
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-2xl font-bold tracking-tight"
+            >
+              BlinkTip
+            </motion.span>
+          </motion.div>
+          <div className="flex items-center gap-4 md:gap-8">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Link href="/login" className="hidden md:block text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+                Sign In
+              </Link>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.6 }}
+            >
+              <Link
+                href="/register-new"
+                className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-full font-bold text-sm hover:scale-105 transition-transform duration-200 shadow-xl"
+              >
+                Get Started
+              </Link>
+            </motion.div>
           </div>
-        </nav>
+        </motion.nav>
 
         {/* Hero Section */}
         <header className="py-20 md:py-32 text-center relative">
