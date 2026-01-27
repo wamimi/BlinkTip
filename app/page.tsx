@@ -373,6 +373,67 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Testimonials / Social Proof */}
+        <section className="mb-32">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.7 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Loved by Creators</h2>
+            <p className="text-gray-500 max-w-xl mx-auto">Hear from the people already earning with BlinkTip.</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                name: 'Sarah K.',
+                handle: '@sarahcrypto',
+                text: 'BlinkTip completely changed how I monetize my content. AI agents send me tips while I sleep!',
+                gradient: 'from-purple-500 to-pink-500',
+              },
+              {
+                name: 'Alex Chen',
+                handle: '@alexbuilds',
+                text: 'The x402 integration is genius. My API earns USDC from agents autonomously. No invoices, no friction.',
+                gradient: 'from-blue-500 to-cyan-500',
+              },
+              {
+                name: 'Maya R.',
+                handle: '@mayaweb3',
+                text: 'One link for Solana and Base tips? Yes please. My followers tip in 2 clicks right from Twitter.',
+                gradient: 'from-orange-500 to-yellow-500',
+              },
+            ].map((testimonial, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 40, rotateY: -10 }}
+                whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15, duration: 0.6, type: 'spring' }}
+                whileHover={{ y: -4, scale: 1.02 }}
+                className="glass-card rounded-3xl p-8 relative overflow-hidden"
+              >
+                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${testimonial.gradient}`} />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-sm`}>
+                    {testimonial.name[0]}
+                  </div>
+                  <div>
+                    <div className="font-bold text-sm">{testimonial.name}</div>
+                    <div className="text-xs text-gray-500">{testimonial.handle}</div>
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
+                  &ldquo;{testimonial.text}&rdquo;
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
         {/* CTA Section */}
         <motion.section
           initial={{ opacity: 0, y: 40 }}
