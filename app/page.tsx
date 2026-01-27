@@ -177,26 +177,44 @@ export default function Home() {
 
         {/* Features Grid */}
         <section id="how-it-works" className="mb-32">
-          <div className="text-center mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.7 }}
+            className="text-center mb-16"
+          >
             <h2 className="text-3xl md:text-5xl font-bold mb-4">Why Creators Choose BlinkTip</h2>
             <p className="text-gray-500 max-w-2xl mx-auto">The infrastructure layer for the next generation of content monetization.</p>
-          </div>
-          
+          </motion.div>
+
           <div className="grid md:grid-cols-3 gap-8">
             {[
               { title: "One Link, Any Chain", icon: "🌐", desc: "Forget Linktree. One URL accepts Solana, Base, Celo, and more. We route the crypto automatically to your preferred wallet." },
               { title: "AI Native (x402)", icon: "🤖", desc: "First platform built for the Agent Economy. AI agents can autonomously discover your 402 endpoint and pay you for content." },
               { title: "Twitter Blinks", icon: "⚡", desc: "Paste your link on X and it turns into a native payment button. Followers tip instantly without leaving the timeline." },
             ].map((feature, i) => (
-              <div key={i} className="glass-card p-10 rounded-3xl hover:-translate-y-2 transition-transform duration-300 group">
-                <div className="text-5xl mb-6 bg-gray-50 dark:bg-zinc-800 w-20 h-20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: '-50px' }}
+                transition={{ duration: 0.5, delay: i * 0.15, type: 'spring', stiffness: 100 }}
+                whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                className="glass-card p-10 rounded-3xl group cursor-default"
+              >
+                <motion.div
+                  whileHover={{ scale: 1.15, rotate: 5 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                  className="text-5xl mb-6 bg-gray-50 dark:bg-zinc-800 w-20 h-20 rounded-2xl flex items-center justify-center"
+                >
                   {feature.icon}
-                </div>
+                </motion.div>
                 <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
                   {feature.desc}
                 </p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>
