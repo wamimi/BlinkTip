@@ -2,9 +2,27 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { motion, useInView } from 'framer-motion'
+import { motion, useInView, useMotionValue, useSpring } from 'framer-motion'
 
 const heroWords = ['Tips', 'from', 'Humans', 'AND', 'AI', 'Agents.']
+
+function useMouseSpotlight() {
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  const smoothX = useSpring(mouseX, { stiffness: 100, damping: 30 })
+  const smoothY = useSpring(mouseY, { stiffness: 100, damping: 30 })
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX)
+      mouseY.set(e.clientY)
+    }
+    window.addEventListener('mousemove', handleMove)
+    return () => window.removeEventListener('mousemove', handleMove)
+  }, [mouseX, mouseY])
+
+  return { x: smoothX, y: smoothY }
+}
 
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0)
@@ -36,8 +54,22 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 }
 
 export default function Home() {
+  const spotlight = useMouseSpotlight()
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black selection:bg-purple-500 selection:text-white relative">
+
+      {/* Mouse-follow spotlight */}
+      <motion.div
+        className="fixed w-[600px] h-[600px] rounded-full pointer-events-none z-0 opacity-20 dark:opacity-15 blur-[100px]"
+        style={{
+          x: spotlight.x,
+          y: spotlight.y,
+          translateX: '-50%',
+          translateY: '-50%',
+          background: 'radial-gradient(circle, rgba(147,51,234,0.3) 0%, rgba(59,130,246,0.2) 40%, transparent 70%)',
+        }}
+      />
 
       {/* Ambient Background Glows */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
