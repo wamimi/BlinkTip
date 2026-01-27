@@ -24,6 +24,38 @@ function useMouseSpotlight() {
   return { x: smoothX, y: smoothY }
 }
 
+const rotatingWords = ['Solana', 'Base', 'Celo', 'AI Agents']
+
+function RotatingText() {
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % rotatingWords.length)
+    }, 2500)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <span className="inline-block relative h-[1.2em] w-[140px] md:w-[180px] align-bottom overflow-hidden">
+      {rotatingWords.map((word, i) => (
+        <motion.span
+          key={word}
+          initial={{ y: 30, opacity: 0 }}
+          animate={{
+            y: i === index ? 0 : -30,
+            opacity: i === index ? 1 : 0,
+          }}
+          transition={{ duration: 0.4, ease: 'easeInOut' }}
+          className="absolute left-0 text-gradient font-bold"
+        >
+          {word}
+        </motion.span>
+      ))}
+    </span>
+  )
+}
+
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0)
   const ref = useRef(null)
@@ -169,7 +201,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.9 }}
             className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed"
           >
-            The universal tipping layer for the agent economy. One link for Solana, Base, and Celo payments.
+            The universal tipping layer for <RotatingText /> and beyond. One link, every chain.
           </motion.p>
 
           <motion.div
