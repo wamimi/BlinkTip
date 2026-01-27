@@ -308,27 +308,60 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="pb-32 text-center">
-          <div className="relative overflow-hidden bg-gradient-to-br from-purple-900 to-blue-900 rounded-[3rem] p-12 md:p-24 text-white shadow-2xl">
-            <div className="relative z-10">
-              <h2 className="text-4xl md:text-6xl font-bold mb-6">Start Earning in Web3 & AI</h2>
-              <p className="text-xl text-purple-100 mb-10 max-w-2xl mx-auto opacity-90">
-                Join thousands of creators receiving tips from humans and autonomous agents today.
-              </p>
-              <Link
-                href="/register-new"
-                className="inline-block px-12 py-5 bg-white text-purple-900 rounded-full font-bold text-xl hover:scale-105 transition-transform shadow-xl"
-              >
-                Claim Your Username
-              </Link>
-            </div>
-            {/* Abstract Shapes */}
-            <div className="absolute top-0 left-0 w-full h-full opacity-40 pointer-events-none mix-blend-overlay">
-              <div className="absolute top-[-50%] left-[-20%] w-[600px] h-[600px] bg-purple-500 rounded-full blur-[120px]" />
-              <div className="absolute bottom-[-50%] right-[-20%] w-[600px] h-[600px] bg-blue-500 rounded-full blur-[120px]" />
+        <motion.section
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.8 }}
+          className="pb-32 text-center"
+        >
+          <div className="relative overflow-hidden rounded-[3rem] p-[2px] shadow-2xl">
+            {/* Animated gradient border */}
+            <div className="absolute inset-0 rounded-[3rem] bg-[conic-gradient(from_var(--angle),theme(colors.purple.600),theme(colors.blue.600),theme(colors.purple.400),theme(colors.blue.400),theme(colors.purple.600))] animate-[spin_4s_linear_infinite]" style={{ '--angle': '0deg' } as React.CSSProperties} />
+            <div className="relative bg-gradient-to-br from-purple-900 to-blue-900 rounded-[calc(3rem-2px)] p-12 md:p-24 text-white overflow-hidden">
+              <div className="relative z-10">
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2, duration: 0.6 }}
+                  className="text-4xl md:text-6xl font-bold mb-6"
+                >
+                  Start Earning in Web3 & AI
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 0.9 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                  className="text-xl text-purple-100 mb-10 max-w-2xl mx-auto"
+                >
+                  Join thousands of creators receiving tips from humans and autonomous agents today.
+                </motion.p>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.6, type: 'spring', stiffness: 200 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Link
+                    href="/register-new"
+                    className="inline-block px-12 py-5 bg-white text-purple-900 rounded-full font-bold text-xl shadow-xl shadow-black/20"
+                  >
+                    Claim Your Username
+                  </Link>
+                </motion.div>
+              </div>
+              {/* Abstract Shapes */}
+              <div className="absolute top-0 left-0 w-full h-full opacity-40 pointer-events-none mix-blend-overlay">
+                <div className="absolute top-[-50%] left-[-20%] w-[600px] h-[600px] bg-purple-500 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-50%] right-[-20%] w-[600px] h-[600px] bg-blue-500 rounded-full blur-[120px]" />
+              </div>
             </div>
           </div>
-        </section>
+        </motion.section>
       </div>
     </div>
   )
