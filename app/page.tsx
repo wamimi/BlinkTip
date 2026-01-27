@@ -263,6 +263,40 @@ export default function Home() {
           ))}
         </motion.section>
 
+        {/* Supported Chains Marquee */}
+        <div className="mb-32 overflow-hidden relative">
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-zinc-50 dark:from-black to-transparent z-10" />
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-zinc-50 dark:from-black to-transparent z-10" />
+          <motion.div
+            animate={{ x: ['0%', '-50%'] }}
+            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+            className="flex gap-8 items-center whitespace-nowrap"
+          >
+            {[...Array(2)].map((_, setIndex) => (
+              <div key={setIndex} className="flex gap-8 items-center">
+                {[
+                  { name: 'Solana', color: 'from-purple-500 to-green-400' },
+                  { name: 'Base', color: 'from-blue-500 to-blue-300' },
+                  { name: 'Celo', color: 'from-yellow-400 to-green-500' },
+                  { name: 'Ethereum', color: 'from-blue-400 to-purple-500' },
+                  { name: 'USDC', color: 'from-blue-600 to-blue-400' },
+                  { name: 'x402 Protocol', color: 'from-purple-600 to-pink-500' },
+                  { name: 'Smart Wallets', color: 'from-indigo-500 to-blue-500' },
+                  { name: 'Blinks', color: 'from-orange-500 to-yellow-400' },
+                ].map((chain, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 px-6 py-3 rounded-full border border-gray-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm"
+                  >
+                    <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${chain.color}`} />
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{chain.name}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
         {/* Features Grid */}
         <section id="how-it-works" className="mb-32">
           <motion.div
