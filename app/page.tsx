@@ -109,6 +109,41 @@ export default function Home() {
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-glow [animation-delay:2s]" />
       </div>
 
+      {/* Floating Orbs */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {[
+          { size: 6, x: '10%', y: '20%', duration: 8, delay: 0, color: 'bg-purple-400/20' },
+          { size: 4, x: '80%', y: '15%', duration: 10, delay: 1, color: 'bg-blue-400/20' },
+          { size: 8, x: '70%', y: '60%', duration: 12, delay: 2, color: 'bg-purple-500/15' },
+          { size: 3, x: '20%', y: '70%', duration: 9, delay: 0.5, color: 'bg-blue-500/20' },
+          { size: 5, x: '50%', y: '40%', duration: 11, delay: 3, color: 'bg-indigo-400/15' },
+          { size: 4, x: '90%', y: '80%', duration: 7, delay: 1.5, color: 'bg-purple-300/20' },
+        ].map((orb, i) => (
+          <motion.div
+            key={i}
+            className={`absolute rounded-full ${orb.color} blur-sm`}
+            style={{
+              width: orb.size * 4,
+              height: orb.size * 4,
+              left: orb.x,
+              top: orb.y,
+            }}
+            animate={{
+              y: [0, -30, 0, 20, 0],
+              x: [0, 15, 0, -15, 0],
+              scale: [1, 1.2, 1, 0.9, 1],
+              opacity: [0.4, 0.7, 0.4, 0.6, 0.4],
+            }}
+            transition={{
+              duration: orb.duration,
+              repeat: Infinity,
+              delay: orb.delay,
+              ease: 'easeInOut',
+            }}
+          />
+        ))}
+      </div>
+
       <div className="relative z-10 max-w-7xl mx-auto px-6">
         {/* Navbar */}
         <motion.nav
