@@ -266,11 +266,22 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-sm font-medium mb-8"
           >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+            <span className="relative flex h-3 w-3">
+              <motion.span
+                animate={{ scale: [1, 2.5, 2.5], opacity: [0.7, 0.3, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+                className="absolute inset-0 rounded-full bg-purple-400"
+              />
+              <motion.span
+                animate={{ scale: [1, 2, 2], opacity: [0.5, 0.2, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeOut', delay: 0.3 }}
+                className="absolute inset-0 rounded-full bg-purple-500"
+              />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/50" />
             </span>
-            Now live: Tips from AI Agents via x402
+            <span className="font-semibold">Live</span>
+            <span className="text-purple-500/50">|</span>
+            Tips from AI Agents via x402
           </motion.div>
 
           <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 leading-[1.1]">
