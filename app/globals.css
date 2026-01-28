@@ -34,6 +34,20 @@ body {
   }
   
   .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      90deg,
+      #9333ea 0%,
+      #3b82f6 25%,
+      #06b6d4 50%,
+      #3b82f6 75%,
+      #9333ea 100%
+    );
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+  }
+
+  .text-gradient-static {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-500 dark:from-purple-400 dark:to-blue-400;
   }
   .animate-fade-in {
@@ -82,4 +96,9 @@ body {
 
 @keyframes spin {
   to { --angle: 360deg; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
 }
