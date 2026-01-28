@@ -224,14 +224,24 @@ export default function Home() {
             >
               B
             </motion.div>
-            <motion.span
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-2xl font-bold tracking-tight"
-            >
-              BlinkTip
-            </motion.span>
+            <span className="text-2xl font-bold tracking-tight flex">
+              {'BlinkTip'.split('').map((letter, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, y: -20, rotateX: -90 }}
+                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                  transition={{
+                    duration: 0.4,
+                    delay: 0.3 + i * 0.05,
+                    type: 'spring',
+                    stiffness: 200,
+                  }}
+                  className={i >= 5 ? 'text-gradient' : ''}
+                >
+                  {letter}
+                </motion.span>
+              ))}
+            </span>
           </motion.div>
           <div className="flex items-center gap-4 md:gap-8">
             <motion.div
