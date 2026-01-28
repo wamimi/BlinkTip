@@ -157,10 +157,16 @@ export default function Home() {
         }}
       />
 
-      {/* Ambient Background Glows */}
+      {/* Ambient Background Glows with Scroll Parallax */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px] animate-pulse-glow" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-glow [animation-delay:2s]" />
+        <motion.div
+          style={{ y: useTransform(scrollYProgress, [0, 1], [0, -150]) }}
+          className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px] animate-pulse-glow"
+        />
+        <motion.div
+          style={{ y: useTransform(scrollYProgress, [0, 1], [0, 200]) }}
+          className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-glow [animation-delay:2s]"
+        />
       </div>
 
       {/* Floating Orbs */}
