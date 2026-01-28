@@ -24,6 +24,43 @@ function useMouseSpotlight() {
   return { x: smoothX, y: smoothY }
 }
 
+function MagneticButton({ children, href }: { children: React.ReactNode; href: string }) {
+  const ref = useRef<HTMLAnchorElement>(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  const springX = useSpring(x, { stiffness: 150, damping: 15 })
+  const springY = useSpring(y, { stiffness: 150, damping: 15 })
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+    x.set((e.clientX - centerX) * 0.15)
+    y.set((e.clientY - centerY) * 0.15)
+  }
+
+  const handleMouseLeave = () => {
+    x.set(0)
+    y.set(0)
+  }
+
+  return (
+    <motion.a
+      ref={ref}
+      href={href}
+      style={{ x: springX, y: springY }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.98 }}
+      className="inline-block w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full font-bold text-lg shadow-2xl shadow-purple-500/30 transition-shadow hover:shadow-purple-500/50"
+    >
+      {children}
+    </motion.a>
+  )
+}
+
 const rotatingWords = ['Solana', 'Base', 'Celo', 'AI Agents']
 
 function RotatingText() {
@@ -262,12 +299,9 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 1.1 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link
-              href="/register-new"
-              className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-purple-500/30 hover:scale-105 transition-all duration-300"
-            >
+            <MagneticButton href="/register-new">
               Create Your Tip Page
-            </Link>
+            </MagneticButton>
             <Link
               href="#how-it-works"
               className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-white rounded-full font-bold text-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all duration-300"
