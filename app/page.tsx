@@ -685,23 +685,39 @@ export default function Home() {
             ].map((testimonial, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 40, rotateY: -10 }}
-                whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15, duration: 0.6, type: 'spring' }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                className="glass-card rounded-3xl p-8 relative overflow-hidden"
+                initial={{ opacity: 0, y: 60, scale: 0.8, rotateX: 20 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
+                viewport={{ once: true, margin: '-50px' }}
+                transition={{
+                  delay: i * 0.2,
+                  duration: 0.7,
+                  type: 'spring',
+                  stiffness: 80,
+                  damping: 15,
+                }}
+                whileHover={{
+                  y: -8,
+                  scale: 1.03,
+                  boxShadow: '0 25px 50px -12px rgba(147, 51, 234, 0.25)',
+                }}
+                className="glass-card rounded-3xl p-8 relative overflow-hidden cursor-default"
+                style={{ transformStyle: 'preserve-3d' }}
               >
                 <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${testimonial.gradient}`} />
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-sm`}>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  transition={{ delay: i * 0.2 + 0.3, type: 'spring', stiffness: 200 }}
+                  className="flex items-center gap-3 mb-4"
+                >
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-white font-bold text-sm shadow-lg`}>
                     {testimonial.name[0]}
                   </div>
                   <div>
                     <div className="font-bold text-sm">{testimonial.name}</div>
                     <div className="text-xs text-gray-500">{testimonial.handle}</div>
                   </div>
-                </div>
+                </motion.div>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm">
                   &ldquo;{testimonial.text}&rdquo;
                 </p>
