@@ -24,6 +24,49 @@ function useMouseSpotlight() {
   return { x: smoothX, y: smoothY }
 }
 
+function Tilt3DCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const rotateX = useMotionValue(0)
+  const rotateY = useMotionValue(0)
+  const springRotateX = useSpring(rotateX, { stiffness: 300, damping: 30 })
+  const springRotateY = useSpring(rotateY, { stiffness: 300, damping: 30 })
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+    const mouseX = e.clientX - centerX
+    const mouseY = e.clientY - centerY
+    rotateX.set(mouseY / -10)
+    rotateY.set(mouseX / 10)
+  }
+
+  const handleMouseLeave = () => {
+    rotateX.set(0)
+    rotateY.set(0)
+  }
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX: springRotateX,
+        rotateY: springRotateY,
+        transformStyle: 'preserve-3d',
+        perspective: 1000,
+      }}
+      className={className}
+    >
+      <div style={{ transform: 'translateZ(20px)' }}>
+        {children}
+      </div>
+    </motion.div>
+  )
+}
+
 function MagneticButton({ children, href }: { children: React.ReactNode; href: string }) {
   const ref = useRef<HTMLAnchorElement>(null)
   const x = useMotionValue(0)
@@ -489,9 +532,9 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { title: "One Link, Any Chain", icon: "🌐", desc: "Forget Linktree. One URL accepts Solana, Base, Celo, and more. We route the crypto automatically to your preferred wallet." },
-              { title: "AI Native (x402)", icon: "🤖", desc: "First platform built for the Agent Economy. AI agents can autonomously discover your 402 endpoint and pay you for content." },
-              { title: "Twitter Blinks", icon: "⚡", desc: "Paste your link on X and it turns into a native payment button. Followers tip instantly without leaving the timeline." },
+              { title: "One Link, Any Chain", icon: "🌐", desc: "Forget Linktree. One URL accepts Solana, Base, Celo, and more. We route the crypto automatically to your preferred wallet.", gradient: 'from-purple-500/20 to-blue-500/20' },
+              { title: "AI Native (x402)", icon: "🤖", desc: "First platform built for the Agent Economy. AI agents can autonomously discover your 402 endpoint and pay you for content.", gradient: 'from-blue-500/20 to-cyan-500/20' },
+              { title: "Twitter Blinks", icon: "⚡", desc: "Paste your link on X and it turns into a native payment button. Followers tip instantly without leaving the timeline.", gradient: 'from-orange-500/20 to-yellow-500/20' },
             ].map((feature, i) => (
               <motion.div
                 key={i}
@@ -499,20 +542,25 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true, margin: '-50px' }}
                 transition={{ duration: 0.5, delay: i * 0.15, type: 'spring', stiffness: 100 }}
-                whileHover={{ y: -8, transition: { duration: 0.2 } }}
-                className="glass-card p-10 rounded-3xl group cursor-default"
               >
-                <motion.div
-                  whileHover={{ scale: 1.15, rotate: 5 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                  className="text-5xl mb-6 bg-gray-50 dark:bg-zinc-800 w-20 h-20 rounded-2xl flex items-center justify-center"
-                >
-                  {feature.icon}
-                </motion.div>
-                <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
-                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {feature.desc}
-                </p>
+                <Tilt3DCard className="h-full">
+                  <div className={`glass-card p-10 rounded-3xl group cursor-default h-full relative overflow-hidden`}>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                    <div className="relative z-10">
+                      <motion.div
+                        whileHover={{ scale: 1.15, rotate: 5 }}
+                        transition={{ type: 'spring', stiffness: 300 }}
+                        className="text-5xl mb-6 bg-gray-50 dark:bg-zinc-800 w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg"
+                      >
+                        {feature.icon}
+                      </motion.div>
+                      <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                        {feature.desc}
+                      </p>
+                    </div>
+                  </div>
+                </Tilt3DCard>
               </motion.div>
             ))}
           </div>
