@@ -359,6 +359,26 @@ export default function Home() {
 
         {/* Hero Section */}
         <header className="py-20 md:py-32 text-center relative">
+          {/* Morphing blob behind hero */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+            <motion.div
+              className="w-[500px] h-[500px] md:w-[700px] md:h-[700px] opacity-20 dark:opacity-10"
+              animate={{
+                borderRadius: [
+                  '60% 40% 30% 70% / 60% 30% 70% 40%',
+                  '30% 60% 70% 40% / 50% 60% 30% 60%',
+                  '60% 40% 30% 70% / 60% 30% 70% 40%',
+                ],
+                rotate: [0, 180, 360],
+              }}
+              transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+              style={{
+                background: 'linear-gradient(135deg, #9333ea 0%, #3b82f6 50%, #06b6d4 100%)',
+                filter: 'blur(60px)',
+              }}
+            />
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
