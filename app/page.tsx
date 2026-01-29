@@ -398,6 +398,12 @@ export default function Home() {
                 {word === 'Humans' && <br />}
               </motion.span>
             ))}
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 1, 1, 0] }}
+              transition={{ duration: 1, repeat: Infinity, delay: 1.2, times: [0, 0.1, 0.9, 1] }}
+              className="inline-block w-[4px] h-[0.9em] bg-gradient-to-b from-purple-500 to-blue-500 ml-1 align-middle rounded-full"
+            />
           </h1>
 
           <motion.p
