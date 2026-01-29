@@ -182,6 +182,52 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black selection:bg-purple-500 selection:text-white relative">
 
+      {/* Animated Gradient Mesh Background */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <svg className="absolute w-full h-full opacity-30 dark:opacity-20" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <filter id="goo">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+              <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10" result="goo" />
+            </filter>
+            <linearGradient id="meshGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#9333ea" />
+              <stop offset="100%" stopColor="#3b82f6" />
+            </linearGradient>
+            <linearGradient id="meshGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#06b6d4" />
+              <stop offset="100%" stopColor="#8b5cf6" />
+            </linearGradient>
+          </defs>
+          <g filter="url(#goo)">
+            <motion.circle
+              cx="20" cy="30" r="15"
+              fill="url(#meshGrad1)"
+              animate={{ cx: [20, 40, 25, 20], cy: [30, 50, 70, 30] }}
+              transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.circle
+              cx="70" cy="60" r="20"
+              fill="url(#meshGrad2)"
+              animate={{ cx: [70, 50, 80, 70], cy: [60, 30, 50, 60] }}
+              transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.circle
+              cx="50" cy="20" r="12"
+              fill="url(#meshGrad1)"
+              animate={{ cx: [50, 70, 30, 50], cy: [20, 40, 30, 20] }}
+              transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.circle
+              cx="80" cy="80" r="18"
+              fill="url(#meshGrad2)"
+              animate={{ cx: [80, 60, 90, 80], cy: [80, 60, 70, 80] }}
+              transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </g>
+        </svg>
+      </div>
+
       {/* Scroll Progress Bar */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-1 z-50 origin-left"
