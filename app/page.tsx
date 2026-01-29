@@ -447,7 +447,18 @@ export default function Home() {
           style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
           className="relative mx-auto max-w-4xl mb-32"
         >
-          <div className="glass-card rounded-3xl p-2 transform rotate-1">
+          {/* Animated border trail */}
+          <div className="absolute -inset-[2px] rounded-3xl overflow-hidden">
+            <motion.div
+              className="absolute w-[200%] h-[200%] top-[-50%] left-[-50%]"
+              style={{
+                background: 'conic-gradient(from 0deg, transparent, #9333ea, #3b82f6, #06b6d4, transparent)',
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+            />
+          </div>
+          <div className="glass-card rounded-3xl p-2 transform rotate-1 relative">
             <div className="bg-gradient-to-b from-gray-50 to-white dark:from-zinc-900 dark:to-black rounded-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
               {/* Fake Browser Header */}
               <div className="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-900/50">
