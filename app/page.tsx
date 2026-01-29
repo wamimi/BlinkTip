@@ -67,6 +67,39 @@ function Tilt3DCard({ children, className }: { children: React.ReactNode; classN
   )
 }
 
+function RippleButton({ children, href, className }: { children: React.ReactNode; href: string; className?: string }) {
+  const [ripples, setRipples] = useState<{ x: number; y: number; id: number }[]>([])
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const id = Date.now()
+    setRipples((prev) => [...prev, { x, y, id }])
+    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 600)
+  }
+
+  return (
+    <Link
+      href={href}
+      onClick={handleClick}
+      className={`relative overflow-hidden ${className}`}
+    >
+      {ripples.map((ripple) => (
+        <motion.span
+          key={ripple.id}
+          initial={{ scale: 0, opacity: 0.5 }}
+          animate={{ scale: 4, opacity: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+          className="absolute w-20 h-20 bg-white/30 rounded-full pointer-events-none"
+          style={{ left: ripple.x - 40, top: ripple.y - 40 }}
+        />
+      ))}
+      {children}
+    </Link>
+  )
+}
+
 function MagneticButton({ children, href }: { children: React.ReactNode; href: string }) {
   const ref = useRef<HTMLAnchorElement>(null)
   const x = useMotionValue(0)
@@ -347,12 +380,12 @@ export default function Home() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.6 }}
             >
-              <Link
+              <RippleButton
                 href="/register-new"
-                className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-full font-bold text-sm hover:scale-105 transition-transform duration-200 shadow-xl"
+                className="px-6 py-2.5 bg-black dark:bg-white text-white dark:text-black rounded-full font-bold text-sm hover:scale-105 transition-transform duration-200 shadow-xl inline-block"
               >
                 Get Started
-              </Link>
+              </RippleButton>
             </motion.div>
           </div>
         </motion.nav>
