@@ -35,11 +35,13 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <MiniAppWagmiProvider>
-          <AuthProvider>
-            <ThirdwebProvider>
-              <SolanaWalletProvider>{children}</SolanaWalletProvider>
-            </ThirdwebProvider>
-          </AuthProvider>
+          <PrivyProvider>
+            <AuthProvider>
+              <ThirdwebProvider>
+                <SolanaWalletProvider>{children}</SolanaWalletProvider>
+              </ThirdwebProvider>
+            </AuthProvider>
+          </PrivyProvider>
         </MiniAppWagmiProvider>
       </body>
     </html>
