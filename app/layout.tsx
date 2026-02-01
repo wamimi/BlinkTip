@@ -5,6 +5,7 @@ import { SolanaWalletProvider } from './providers/SolanaWalletProvider'
 import { ThirdwebProvider } from './providers/ThirdwebProvider'
 import { AuthProvider } from './providers'
 import { MiniAppWagmiProvider } from './providers/MiniAppWagmiProvider'
+import { PrivyProvider } from './providers/PrivyProvider'
 import { minikitConfig } from '@/minikit.config'
 
 const geistSans = Geist({
