@@ -296,6 +296,8 @@ export async function POST(request: NextRequest) {
         farcaster_fid: farcaster_fid || null,
         farcaster_username: farcaster_username || null,
         farcaster_verified: !!farcaster_fid,
+        privy_user_id: privy_user_id || null,
+        email: email || null,
       })
       .select()
       .single()
