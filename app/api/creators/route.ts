@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
       evm_verification_message,
       farcaster_fid,
       farcaster_username,
+      privy_user_id,
+      email,
     } = body
 
     // Check authentication
