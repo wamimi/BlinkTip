@@ -27,10 +27,18 @@ export const supabase = new Proxy({} as SupabaseClient, {
 export type Creator = {
   id: string
   slug: string
-  wallet_address: string
+  wallet_address: string | null
+  evm_wallet_address?: string | null
   name: string
   bio?: string
   avatar_url?: string
+  privy_user_id?: string | null
+  email?: string | null
+  farcaster_fid?: number | null
+  farcaster_username?: string | null
+  twitter_handle?: string | null
+  twitter_verified?: boolean
+  supported_chains?: string[]
   created_at: string
   updated_at: string
 }
