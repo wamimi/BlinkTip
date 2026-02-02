@@ -35,12 +35,15 @@ export async function POST(request: NextRequest) {
     // Check authentication
     const session = await getServerSession(authOptions)
 
-    // For mini app (Base Account): wallet signature is sufficient, no Twitter auth needed
-    // For web app: Twitter auth is required
-    const isMiniAppUser = evm_wallet_address && !session?.user?.twitterId
+    // Auth types:
+    // 1. Privy user (web): has privy_user_id and evm_wallet_address (no signature needed - Privy handles auth)
+    // 2. MiniApp user (Farcaster/Base): has evm_wallet_address with signature
+    // 3. Twitter user (legacy web): has Twitter session
+    const isPrivyUser = !!privy_user_id && !!evm_wallet_address
+    const isMiniAppUser = evm_wallet_address && evm_wallet_signature && !privy_user_id
     const isWebUser = !!session?.user?.twitterId
 
-    if (!isMiniAppUser && !isWebUser) {
+    if (!isPrivyUser && !isMiniAppUser && !isWebUser) {
       return NextResponse.json(
         { error: 'Unauthorized - Authentication required' },
         { status: 401 }
