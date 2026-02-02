@@ -150,6 +150,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Privy user profile handling: Check if user already has a profile
+    if (privy_user_id) {
+      const { data: existingByPrivy } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('privy_user_id', privy_user_id)
+        .single()
+
+      if (existingByPrivy) {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+        return NextResponse.json({
+          success: true,
+          creator: existingByPrivy,
+          message: 'Profile already exists',
+          tip_link: `${baseUrl}/tip/${existingByPrivy.slug}`,
+          blink_url: `https://dial.to/?action=solana-action:${baseUrl}/api/actions/tip/${existingByPrivy.slug}`,
+          x402_endpoint: `${baseUrl}/api/x402/tip/${existingByPrivy.slug}/pay-solana`,
+        }, { status: 200 })
+      }
+    }
+
     // FID-based profile handling: Check if user already has a profile with this FID
     if (farcaster_fid) {
       const { data: existingByFid, error: fidError } = await supabase
