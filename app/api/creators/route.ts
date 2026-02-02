@@ -105,7 +105,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (evm_wallet_address) {
+    // For Privy users, skip EVM signature verification - Privy handles authentication
+    // For MiniApp users, require signature verification
+    if (evm_wallet_address && !isPrivyUser) {
       if (!evm_wallet_signature || !evm_verification_message) {
         return NextResponse.json(
           { error: 'EVM wallet signature and verification message required' },
