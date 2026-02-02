@@ -50,10 +50,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Rate limiting: use wallet address for mini app, Twitter ID for web
-    const rateLimitKey = isMiniAppUser
-      ? `creator_reg:wallet:${evm_wallet_address}`
-      : `creator_reg:tw:${session?.user?.twitterId}`
+    // Rate limiting: use appropriate identifier for each auth type
+    const rateLimitKey = isPrivyUser
+      ? `creator_reg:privy:${privy_user_id}`
+      : isMiniAppUser
+        ? `creator_reg:wallet:${evm_wallet_address}`
+        : `creator_reg:tw:${session?.user?.twitterId}`
 
     const rateLimitResult = await rateLimit(rateLimitKey, {
       limit: 5,
