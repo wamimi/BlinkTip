@@ -1,14 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession, signIn } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { useMiniApp } from '@/context/miniapp'
 import { SignInWithBaseSection } from '@/components/SignInWithBaseSection'
+import { usePrivyUser } from '@/hooks/usePrivyUser'
 import Link from 'next/link'
 
 export default function RegisterPage() {
-  const { isInMiniApp, user: miniAppUser, walletAddress: miniAppWalletAddress } = useMiniApp()
+  const { isInMiniApp, user: miniAppUser } = useMiniApp()
   const { data: session } = useSession()
+  const {
+    isAuthenticated: isPrivyAuthenticated,
+    isLoading: isPrivyLoading,
+    userId: privyUserId,
+    email: privyEmail,
+    evmWallet: privyEvmWallet,
+    login: privyLogin,
+    logout: privyLogout,
+  } = usePrivyUser()
 
   // Sign in with Base state (miniapp only)
   const [baseAccountAuth, setBaseAccountAuth] = useState<{
@@ -25,8 +35,8 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [tipLink, setTipLink] = useState('')
-  const [blinkUrl, setBlinkUrl] = useState('')
 
+  // Pre-fill form from various auth sources
   useEffect(() => {
     if (isInMiniApp && miniAppUser) {
       if (miniAppUser.username && !slug) setSlug(miniAppUser.username)
@@ -37,8 +47,12 @@ export default function RegisterPage() {
       if (session.user.twitterHandle && !slug) setSlug(session.user.twitterHandle)
       if (session.user.twitterName && !name) setName(session.user.twitterName)
       if (session.user.twitterAvatarUrl && !avatarUrl) setAvatarUrl(session.user.twitterAvatarUrl)
+    } else if (isPrivyAuthenticated && privyEmail) {
+      // Pre-fill from Privy email (use email prefix as default slug)
+      const emailPrefix = privyEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_-]/g, '')
+      if (!slug && emailPrefix) setSlug(emailPrefix)
     }
-  }, [session, isInMiniApp, miniAppUser])
+  }, [session, isInMiniApp, miniAppUser, isPrivyAuthenticated, privyEmail, slug, name, avatarUrl, bio])
 
   const handleBaseAccountSignIn = (data: { address: string; message: string; signature: string }) => {
     setBaseAccountAuth(data)
@@ -48,13 +62,16 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!isInMiniApp) {
-      setError('Web app is currently under maintenance. Please use the Base App or Farcaster miniapp.')
-      return
-    }
+    // Determine auth type and validate
+    const isMiniAppAuth = isInMiniApp && baseAccountAuth
+    const isPrivyAuth = !isInMiniApp && isPrivyAuthenticated && privyUserId && privyEvmWallet
 
-    if (!baseAccountAuth) {
-      setError('Please sign in with your Base Account first')
+    if (!isMiniAppAuth && !isPrivyAuth) {
+      if (isInMiniApp) {
+        setError('Please sign in with your Base Account first')
+      } else {
+        setError('Please sign in with your email first')
+      }
       return
     }
 
@@ -62,32 +79,47 @@ export default function RegisterPage() {
     setError(null)
 
     try {
-      console.log('Submitting registration:', {
+      // Build request body based on auth type
+      const requestBody: Record<string, unknown> = {
         slug,
         name,
-        evm_wallet_address: baseAccountAuth.address,
-        farcaster_fid: miniAppUser?.fid,
-      })
-      console.log('Signature length:', baseAccountAuth.signature.length)
-      console.log('Signature preview:', baseAccountAuth.signature.substring(0, 66) + '...')
-      console.log('Message length:', baseAccountAuth.message.length)
-      console.log('Message preview:', baseAccountAuth.message.substring(0, 100))
+        bio: bio.trim() || undefined,
+        avatar_url: avatarUrl.trim() || undefined,
+        supported_chains: ['base'],
+      }
+
+      if (isMiniAppAuth && baseAccountAuth) {
+        // MiniApp flow: include signature for verification
+        requestBody.evm_wallet_address = baseAccountAuth.address
+        requestBody.evm_wallet_signature = baseAccountAuth.signature
+        requestBody.evm_verification_message = baseAccountAuth.message
+        requestBody.farcaster_fid = miniAppUser?.fid
+        requestBody.farcaster_username = miniAppUser?.username
+
+        console.log('Submitting miniapp registration:', {
+          slug,
+          name,
+          evm_wallet_address: baseAccountAuth.address,
+          farcaster_fid: miniAppUser?.fid,
+        })
+      } else if (isPrivyAuth) {
+        // Privy flow: no signature needed, Privy handles auth
+        requestBody.privy_user_id = privyUserId
+        requestBody.email = privyEmail
+        requestBody.evm_wallet_address = privyEvmWallet
+
+        console.log('Submitting Privy registration:', {
+          slug,
+          name,
+          privy_user_id: privyUserId,
+          evm_wallet_address: privyEvmWallet,
+        })
+      }
 
       const response = await fetch('/api/creators', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slug,
-          name,
-          bio: bio.trim() || undefined,
-          avatar_url: avatarUrl.trim() || undefined,
-          evm_wallet_address: baseAccountAuth.address,
-          evm_wallet_signature: baseAccountAuth.signature,
-          evm_verification_message: baseAccountAuth.message,
-          supported_chains: ['base'],
-          farcaster_fid: miniAppUser?.fid,
-          farcaster_username: miniAppUser?.username,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {
@@ -106,7 +138,6 @@ export default function RegisterPage() {
 
       setSuccess(true)
       setTipLink(data.tip_link)
-      setBlinkUrl(data.blink_url)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
@@ -114,20 +145,13 @@ export default function RegisterPage() {
     }
   }
 
-  if (!isInMiniApp) {
+  // Show loading while Privy initializes (web only)
+  if (!isInMiniApp && isPrivyLoading) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
-        <div className="max-w-2xl w-full glass-card rounded-3xl p-10 text-center">
-          <h1 className="text-4xl font-bold mb-4">Under Maintenance</h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-            The web app is currently being upgraded. Please use BlinkTip on Base App or Farcaster.
-          </p>
-          <Link
-            href="/"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
-          >
-            Go Home
-          </Link>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     )
@@ -183,15 +207,53 @@ export default function RegisterPage() {
               1
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold mb-2">Sign in with Base</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Authenticate with your Base Account to get started
-              </p>
-
-              <SignInWithBaseSection
-                onSuccess={handleBaseAccountSignIn}
-                isAuthenticated={!!baseAccountAuth}
-              />
+              {isInMiniApp ? (
+                <>
+                  <h3 className="text-xl font-bold mb-2">Sign in with Base</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Authenticate with your Base Account to get started
+                  </p>
+                  <SignInWithBaseSection
+                    onSuccess={handleBaseAccountSignIn}
+                    isAuthenticated={!!baseAccountAuth}
+                  />
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl font-bold mb-2">Sign in with Email</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    We'll create a wallet for you automatically
+                  </p>
+                  {isPrivyAuthenticated ? (
+                    <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-green-700 dark:text-green-400">Signed in as {privyEmail}</p>
+                        <p className="text-sm text-green-600 dark:text-green-500 font-mono truncate">
+                          Wallet: {privyEvmWallet?.slice(0, 6)}...{privyEvmWallet?.slice(-4)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => privyLogout()}
+                        className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => privyLogin()}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 px-6 rounded-2xl font-bold hover:shadow-lg hover:scale-105 transition-all"
+                    >
+                      Continue with Email
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -260,7 +322,7 @@ export default function RegisterPage() {
 
                 <button
                   type="submit"
-                  disabled={loading || !baseAccountAuth}
+                  disabled={loading || (isInMiniApp ? !baseAccountAuth : !isPrivyAuthenticated || !privyEvmWallet)}
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-2xl font-bold hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {loading ? 'Creating...' : 'Create Tip Page'}
