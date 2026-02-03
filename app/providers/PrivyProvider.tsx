@@ -36,10 +36,14 @@ export function PrivyProvider({ children }: PrivyProviderProps) {
           accentColor: '#9333ea',
           logo: '/icon.png',
           showWalletLoginFirst: false,
+          landingHeader: 'Sign in to BlinkTip',
+          loginMessage: 'Create your universal tip page to accept crypto from humans and AI agents.',
         },
         loginMethods: ['email'],
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+          ethereum: {
+            createOnLogin: 'users-without-wallets',
+          },
         },
         defaultChain: baseSepolia,
         supportedChains: [base, baseSepolia],
