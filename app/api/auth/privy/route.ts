@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const { data: creator, error } = await supabase
       .from('creators')
-      .select('id, slug, name, avatar_url, evm_wallet_address, wallet_address')
+      .select('id, slug, name, bio, avatar_url, evm_wallet_address, wallet_address, twitter_handle, twitter_verified, email')
       .eq('privy_user_id', privyUserId)
       .single()
 
@@ -34,9 +34,13 @@ export async function GET(request: NextRequest) {
       creator: {
         slug: creator.slug,
         name: creator.name,
+        bio: creator.bio,
         avatar_url: creator.avatar_url,
         has_evm_wallet: !!creator.evm_wallet_address,
         has_solana_wallet: !!creator.wallet_address,
+        twitter_handle: creator.twitter_handle,
+        twitter_verified: creator.twitter_verified,
+        email: creator.email,
       },
     })
   } catch (error) {
