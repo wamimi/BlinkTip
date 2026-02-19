@@ -2,7 +2,9 @@
   "name": "BlinkTip",
   "scripts": {
     "dev": "next dev",
+    "dev:webpack": "next dev --webpack",
     "build": "next build",
+    "build:webpack": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test-db": "tsx --env-file=.env scripts/test-db.ts",
