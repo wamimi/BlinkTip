@@ -19,15 +19,24 @@ export function usePrivyUser(): PrivyUserData {
   const { wallets } = useWallets()
 
   const data = useMemo(() => {
-    // Find embedded EVM wallet (created by Privy)
+    // useWallets() returns ConnectedWallet[] which extends BaseConnectedEthereumWallet.
+    // Identify the embedded EVM wallet by walletClientType.
     const evmWallet = wallets.find(
-      (w) => w.walletClientType === 'privy' && w.chainType === 'ethereum'
+      (w) => w.walletClientType === 'privy' || w.walletClientType === 'privy-v2'
     )
 
-    // Find embedded Solana wallet if available
-    const solanaWallet = wallets.find(
-      (w) => w.walletClientType === 'privy' && w.chainType === 'solana'
+    // Solana embedded wallets are not in useWallets(); find them via user.linkedAccounts.
+    // WalletWithMetadata has chainType: 'ethereum' | 'solana'
+    const solanaAccount = user?.linkedAccounts?.find(
+      (account) =>
+        account.type === 'wallet' &&
+        'chainType' in account &&
+        account.chainType === 'solana' &&
+        'walletClientType' in account &&
+        (account.walletClientType === 'privy' || account.walletClientType === 'privy-v2')
     )
+    const solanaWalletAddress =
+      solanaAccount && 'address' in solanaAccount ? (solanaAccount.address as string) : null
 
     // Get email from user's linked accounts
     const emailAccount = user?.linkedAccounts?.find(
@@ -41,7 +50,7 @@ export function usePrivyUser(): PrivyUserData {
       userId: user?.id || null,
       email,
       evmWallet: evmWallet?.address || null,
-      solanaWallet: solanaWallet?.address || null,
+      solanaWallet: solanaWalletAddress,
       login,
       logout,
     }
