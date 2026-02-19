@@ -23,6 +23,7 @@ export default function LoginPage() {
 
   const [checkingProfile, setCheckingProfile] = useState(false)
   const [creatingProfile, setCreatingProfile] = useState(false)
+  const [autoCreateError, setAutoCreateError] = useState<string | null>(null)
   const [showUsernameModal, setShowUsernameModal] = useState(false)
   const [username, setUsername] = useState('')
   const [usernameError, setUsernameError] = useState<string | null>(null)
@@ -36,12 +37,19 @@ export default function LoginPage() {
 
   // Auto-create profile for Privy users or redirect if already exists
   useEffect(() => {
-    if (!isInMiniApp && isPrivyAuthenticated && privyUserId && privyEvmWallet && !checkingProfile && !creatingProfile && !showUsernameModal) {
+    if (!isInMiniApp && isPrivyAuthenticated && privyUserId && privyEvmWallet && !checkingProfile && !creatingProfile && !showUsernameModal && !autoCreateError) {
       setCheckingProfile(true)
 
       fetch(`/api/auth/privy?privy_user_id=${encodeURIComponent(privyUserId)}`)
-        .then((res) => res.json())
-        .then((data) => {
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}))
+          if (!res.ok) {
+            console.error('Error checking profile:', data)
+            setAutoCreateError(data?.error || 'Failed to check your profile. Please try again.')
+            setCheckingProfile(false)
+            return
+          }
+
           if (data.exists) {
             // User has a profile, go to dashboard
             router.push('/dashboard')
@@ -52,16 +60,18 @@ export default function LoginPage() {
         })
         .catch((err) => {
           console.error('Error checking profile:', err)
+          setAutoCreateError('Failed to check your profile. Please try again.')
           setCheckingProfile(false)
         })
     }
-  }, [isInMiniApp, isPrivyAuthenticated, privyUserId, privyEvmWallet, router, checkingProfile, creatingProfile, showUsernameModal])
+  }, [isInMiniApp, isPrivyAuthenticated, privyUserId, privyEvmWallet, router, checkingProfile, creatingProfile, showUsernameModal, autoCreateError])
 
   const autoCreateProfile = async (customUsername?: string) => {
     if (!privyUserId || !privyEvmWallet || !privyEmail) return
 
     setCreatingProfile(true)
     setUsernameError(null)
+    setAutoCreateError(null)
 
     // Generate username from email prefix or use custom
     const emailPrefix = privyEmail.split('@')[0].toLowerCase().replace(/[^a-z0-9_-]/g, '')
@@ -98,12 +108,14 @@ export default function LoginPage() {
       } else {
         console.error('Failed to create profile:', data.error)
         setUsernameError(data.error || 'Failed to create profile')
+        setAutoCreateError(data.error || 'Failed to create profile. Please try again.')
         setCreatingProfile(false)
         setCheckingProfile(false)
       }
     } catch (err) {
       console.error('Error creating profile:', err)
       setUsernameError('Something went wrong. Please try again.')
+      setAutoCreateError('Something went wrong. Please try again.')
       setCreatingProfile(false)
       setCheckingProfile(false)
     }
@@ -138,6 +150,27 @@ export default function LoginPage() {
           <p className="text-gray-600 dark:text-gray-400">
             {creatingProfile ? 'Setting up your account...' : checkingProfile ? 'Checking your profile...' : 'Loading...'}
           </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isInMiniApp && autoCreateError) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-4">
+        <div className="text-center max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-3">We could not set up your account</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{autoCreateError}</p>
+          <button
+            onClick={() => {
+              setAutoCreateError(null)
+              setCheckingProfile(false)
+              setCreatingProfile(false)
+            }}
+            className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-2xl text-lg hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     )
