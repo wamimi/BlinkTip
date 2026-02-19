@@ -1,6 +1,10 @@
 import type { NextConfig } from 'next'
 import webpack from 'webpack'
 
+// Turbopack does not support absolute (server-relative) import paths.
+// Keep this as a project-root relative path for turbopack aliases.
+const emptyModule = './lib/empty-module.js'
+
 const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: false,
@@ -36,12 +40,16 @@ const nextConfig: NextConfig = {
   
   turbopack: {
     resolveAlias: {
-      'pino': '@/lib/empty-module.js',
-      'thread-stream': '@/lib/empty-module.js',
-      'pino-pretty': '@/lib/empty-module.js',
-      '@walletconnect/logger': '@/lib/empty-module.js',
-      'pino/file': '@/lib/empty-module.js',
-      'pino/stream': '@/lib/empty-module.js',
+      'pino': emptyModule,
+      'pino/file': emptyModule,
+      'pino/stream': emptyModule,
+      'pino/lib/transport.js': emptyModule,
+      'pino-pretty': emptyModule,
+      'thread-stream': emptyModule,
+      '@walletconnect/logger': emptyModule,
+      '@walletconnect/logger/dist/index.es.js': emptyModule,
+      '@walletconnect/logger/dist/index.cjs.js': emptyModule,
+      '@walletconnect/logger/dist/index.umd.js': emptyModule,
     },
     resolveExtensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
   },

@@ -28,27 +28,34 @@ export async function POST(request: NextRequest) {
       evm_verification_message,
       farcaster_fid,
       farcaster_username,
+      privy_user_id,
+      email,
     } = body
 
     // Check authentication
     const session = await getServerSession(authOptions)
 
-    // For mini app (Base Account): wallet signature is sufficient, no Twitter auth needed
-    // For web app: Twitter auth is required
-    const isMiniAppUser = evm_wallet_address && !session?.user?.twitterId
+    // Auth types:
+    // 1. Privy user (web): has privy_user_id and evm_wallet_address (no signature needed - Privy handles auth)
+    // 2. MiniApp user (Farcaster/Base): has evm_wallet_address with signature
+    // 3. Twitter user (legacy web): has Twitter session
+    const isPrivyUser = !!privy_user_id && !!evm_wallet_address
+    const isMiniAppUser = evm_wallet_address && evm_wallet_signature && !privy_user_id
     const isWebUser = !!session?.user?.twitterId
 
-    if (!isMiniAppUser && !isWebUser) {
+    if (!isPrivyUser && !isMiniAppUser && !isWebUser) {
       return NextResponse.json(
         { error: 'Unauthorized - Authentication required' },
         { status: 401 }
       )
     }
 
-    // Rate limiting: use wallet address for mini app, Twitter ID for web
-    const rateLimitKey = isMiniAppUser
-      ? `creator_reg:wallet:${evm_wallet_address}`
-      : `creator_reg:tw:${session?.user?.twitterId}`
+    // Rate limiting: use appropriate identifier for each auth type
+    const rateLimitKey = isPrivyUser
+      ? `creator_reg:privy:${privy_user_id}`
+      : isMiniAppUser
+        ? `creator_reg:wallet:${evm_wallet_address}`
+        : `creator_reg:tw:${session?.user?.twitterId}`
 
     const rateLimitResult = await rateLimit(rateLimitKey, {
       limit: 5,
@@ -98,7 +105,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (evm_wallet_address) {
+    // For Privy users, skip EVM signature verification - Privy handles authentication
+    // For MiniApp users, require signature verification
+    if (evm_wallet_address && !isPrivyUser) {
       if (!evm_wallet_signature || !evm_verification_message) {
         return NextResponse.json(
           { error: 'EVM wallet signature and verification message required' },
@@ -139,6 +148,27 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid slug format. Use 3-50 lowercase letters, numbers, hyphens, or underscores' },
         { status: 400 }
       )
+    }
+
+    // Privy user profile handling: Check if user already has a profile
+    if (privy_user_id) {
+      const { data: existingByPrivy } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('privy_user_id', privy_user_id)
+        .single()
+
+      if (existingByPrivy) {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+        return NextResponse.json({
+          success: true,
+          creator: existingByPrivy,
+          message: 'Profile already exists',
+          tip_link: `${baseUrl}/tip/${existingByPrivy.slug}`,
+          blink_url: `https://dial.to/?action=solana-action:${baseUrl}/api/actions/tip/${existingByPrivy.slug}`,
+          x402_endpoint: `${baseUrl}/api/x402/tip/${existingByPrivy.slug}/pay-solana`,
+        }, { status: 200 })
+      }
     }
 
     // FID-based profile handling: Check if user already has a profile with this FID
@@ -266,6 +296,7 @@ export async function POST(request: NextRequest) {
         farcaster_fid: farcaster_fid || null,
         farcaster_username: farcaster_username || null,
         farcaster_verified: !!farcaster_fid,
+        privy_user_id: privy_user_id || null,
       })
       .select()
       .single()

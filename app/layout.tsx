@@ -5,6 +5,7 @@ import { SolanaWalletProvider } from './providers/SolanaWalletProvider'
 import { ThirdwebProvider } from './providers/ThirdwebProvider'
 import { AuthProvider } from './providers'
 import { MiniAppWagmiProvider } from './providers/MiniAppWagmiProvider'
+import { PrivyProvider } from './providers/PrivyProvider'
 import { minikitConfig } from '@/minikit.config'
 
 const geistSans = Geist({
@@ -23,6 +24,9 @@ export const metadata: Metadata = {
   icons: {
     icon: '/icon.png',
   },
+  other: {
+    'base:app_id': '694fd0eb4d3a403912ed823c',
+  },
 }
 
 export default function RootLayout({
@@ -34,11 +38,13 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <MiniAppWagmiProvider>
-          <AuthProvider>
-            <ThirdwebProvider>
-              <SolanaWalletProvider>{children}</SolanaWalletProvider>
-            </ThirdwebProvider>
-          </AuthProvider>
+          <PrivyProvider>
+            <AuthProvider>
+              <ThirdwebProvider>
+                <SolanaWalletProvider>{children}</SolanaWalletProvider>
+              </ThirdwebProvider>
+            </AuthProvider>
+          </PrivyProvider>
         </MiniAppWagmiProvider>
       </body>
     </html>

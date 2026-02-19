@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useWalletClient, useAccount } from 'wagmi'
 import { useMiniApp } from '@/context/miniapp'
+import { usePrivyUser } from '@/hooks/usePrivyUser'
 
 // Define Creator Type
 type Creator = {
@@ -22,15 +23,23 @@ export default function TipPage() {
   const slug = params.slug as string
 
   // Mini App detection
-  const { isInMiniApp, user: miniAppUser, walletAddress: miniAppWalletAddress } = useMiniApp()
+  const { isInMiniApp, walletAddress: miniAppWalletAddress } = useMiniApp()
 
-  // Wagmi hooks
+  // Privy auth for web users
+  const {
+    isAuthenticated: isPrivyAuthenticated,
+    isLoading: isPrivyLoading,
+    evmWallet: privyEvmWallet,
+    login: privyLogin,
+  } = usePrivyUser()
+
+  // Wagmi hooks (used by miniapp)
   const { address, isConnected } = useAccount()
   const { data: walletClient } = useWalletClient()
 
-  // Determine which wallet to use
-  const activeAddress = isInMiniApp ? miniAppWalletAddress : address
-  const activeConnection = isInMiniApp ? !!miniAppWalletAddress : isConnected
+  // Determine which wallet to use based on context
+  const activeAddress = isInMiniApp ? miniAppWalletAddress : (privyEvmWallet || address)
+  const activeConnection = isInMiniApp ? !!miniAppWalletAddress : (isPrivyAuthenticated || isConnected)
 
   const [creator, setCreator] = useState<Creator | null>(null)
   const [loading, setLoading] = useState(true)
@@ -241,14 +250,13 @@ export default function TipPage() {
     }
   }
 
-  if (!isInMiniApp) {
+  // Show loading while Privy initializes (web only)
+  if (!isInMiniApp && isPrivyLoading) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center p-6">
-        <div className="max-w-2xl w-full glass-card rounded-3xl p-10 text-center">
-          <h1 className="text-4xl font-bold mb-4">Under Maintenance</h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-            The web app is currently being upgraded. Please use BlinkTip on Base App or Farcaster to send tips.
-          </p>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     )
@@ -292,11 +300,11 @@ export default function TipPage() {
                 <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">BlinkTip</span>
               </div>
             </div>
-            {miniAppWalletAddress && (
+            {activeAddress && (
               <div className="px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-sm">
                 <span className="flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  {miniAppWalletAddress.slice(0, 6)}...{miniAppWalletAddress.slice(-4)}
+                  {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
                 </span>
               </div>
             )}
@@ -360,15 +368,24 @@ export default function TipPage() {
           </div>
 
           {/* Action Button */}
-          {!miniAppWalletAddress ? (
-            <div className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 text-amber-700 dark:text-amber-400 rounded-2xl text-sm border border-amber-200/50 dark:border-amber-700/50">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          {!activeConnection ? (
+            isInMiniApp ? (
+              <div className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 text-amber-700 dark:text-amber-400 rounded-2xl text-sm border border-amber-200/50 dark:border-amber-700/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <span>Connect your wallet in Base App to send tips</span>
                 </div>
-                <span>Connect your wallet in Base App to send tips</span>
               </div>
-            </div>
+            ) : (
+              <button
+                onClick={() => privyLogin()}
+                className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl font-bold text-lg hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-purple-500/30"
+              >
+                Sign in to Send Tip
+              </button>
+            )
           ) : (
              <button
               onClick={handleTip}
